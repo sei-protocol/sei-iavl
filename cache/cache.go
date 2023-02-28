@@ -2,6 +2,8 @@ package cache
 
 import (
 	"container/list"
+	"encoding/hex"
+	"fmt"
 
 	ibytes "github.com/cosmos/iavl/internal/bytes"
 )
@@ -81,6 +83,7 @@ func (c *lruCache) Add(node Node) Node {
 
 func (nc *lruCache) Get(key []byte) Node {
 	if ele, hit := nc.dict[ibytes.UnsafeBytesToStr(key)]; hit {
+		fmt.Printf("LRUCache hit ele with key: %s\n", hex.EncodeToString(key))
 		nc.ll.MoveToFront(ele)
 		return ele.Value.(Node)
 	}
