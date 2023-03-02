@@ -485,8 +485,6 @@ func (tree *MutableTree) LazyLoadVersion(targetVersion int64) (int64, error) {
 	if latestVersion <= 0 {
 		if targetVersion <= 0 {
 			if !tree.skipFastStorageUpgrade {
-				tree.mtx.Lock()
-				defer tree.mtx.Unlock()
 				_, err := tree.enableFastStorageAndCommitIfNotEnabled()
 				return 0, err
 			}
