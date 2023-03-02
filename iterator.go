@@ -6,6 +6,8 @@ package iavl
 import (
 	"bytes"
 	"errors"
+	"fmt"
+	"runtime/debug"
 
 	dbm "github.com/tendermint/tm-db"
 )
@@ -90,6 +92,7 @@ func (nodes *delayedNodes) length() int {
 //     set to false, and immediately returned at the subsequent call of `traversal.next()` at the last line.
 //  2. If the traversal is preorder, the current node will be returned.
 func (t *traversal) next() (*Node, error) {
+	fmt.Printf("TMDEBUG - calling iterator.next() from %s\n", debug.Stack())
 	// End of traversal.
 	if t.delayedNodes.length() == 0 {
 		return nil, nil
