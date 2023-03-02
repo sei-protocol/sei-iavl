@@ -90,29 +90,16 @@ func (nodes *delayedNodes) length() int {
 //     set to false, and immediately returned at the subsequent call of `traversal.next()` at the last line.
 //  2. If the traversal is preorder, the current node will be returned.
 func (t *traversal) next() (*Node, error) {
-	n, err, shouldReturn := t.doNext()
-	if shouldReturn {
-		return n, err
-	}
-
-	// Keep traversing and expanding the remaning delayed nodes. A-4.
-	return t.next()
-}
-
-func (t *traversal) doNext() (*Node, error, bool) {
-	t.tree.mtx.Lock()
-	defer t.tree.mtx.Unlock()
-
 	// End of traversal.
 	if t.delayedNodes.length() == 0 {
-		return nil, nil, true
+		return nil, nil
 	}
 
 	node, delayed := t.delayedNodes.pop()
 
 	// Already expanded, immediately return.
 	if !delayed || node == nil {
-		return node, nil, true
+		return node, nil
 	}
 
 	afterStart := t.start == nil || bytes.Compare(t.start, node.key) < 0
@@ -137,7 +124,7 @@ func (t *traversal) doNext() (*Node, error, bool) {
 				// push the delayed traversal for the right nodes,
 				rightNode, err := node.getRightNode(t.tree)
 				if err != nil {
-					return nil, err, true
+					return nil, err
 				}
 				t.delayedNodes.push(rightNode, true)
 			}
@@ -145,7 +132,7 @@ func (t *traversal) doNext() (*Node, error, bool) {
 				// push the delayed traversal for the left nodes,
 				leftNode, err := node.getLeftNode(t.tree)
 				if err != nil {
-					return nil, err, true
+					return nil, err
 				}
 				t.delayedNodes.push(leftNode, true)
 			}
@@ -156,7 +143,7 @@ func (t *traversal) doNext() (*Node, error, bool) {
 				// push the delayed traversal for the left nodes,
 				leftNode, err := node.getLeftNode(t.tree)
 				if err != nil {
-					return nil, err, true
+					return nil, err
 				}
 				t.delayedNodes.push(leftNode, true)
 			}
@@ -164,7 +151,7 @@ func (t *traversal) doNext() (*Node, error, bool) {
 				// push the delayed traversal for the right nodes,
 				rightNode, err := node.getRightNode(t.tree)
 				if err != nil {
-					return nil, err, true
+					return nil, err
 				}
 				t.delayedNodes.push(rightNode, true)
 			}
@@ -174,10 +161,11 @@ func (t *traversal) doNext() (*Node, error, bool) {
 	// case of preorder traversal. A-3 and B-2.
 	// Process root then (recursively) processing left child, then process right child
 	if !t.post && (!node.isLeaf() || (startOrAfter && beforeEnd)) {
-		return node, nil, true
+		return node, nil
 	}
 
-	return nil, nil, false
+	// Keep traversing and expanding the remaning delayed nodes. A-4.
+	return t.next()
 }
 
 // Iterator is a dbm.Iterator for ImmutableTree
