@@ -550,8 +550,6 @@ func (tree *MutableTree) LoadVersion(targetVersion int64) (int64, error) {
 	if len(roots) == 0 {
 		if targetVersion <= 0 {
 			if !tree.skipFastStorageUpgrade {
-				tree.mtx.Lock()
-				defer tree.mtx.Unlock()
 				_, err := tree.enableFastStorageAndCommitIfNotEnabled()
 				return 0, err
 			}
