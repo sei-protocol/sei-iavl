@@ -72,8 +72,8 @@ func (tree *MutableTree) IsEmpty() bool {
 
 // VersionExists returns whether or not a version exists.
 func (tree *MutableTree) VersionExists(version int64) bool {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	//tree.mtx.Lock()
+	//defer tree.mtx.Unlock()
 
 	if tree.allRootLoaded {
 		return tree.versions[version]
@@ -1069,8 +1069,8 @@ func (tree *MutableTree) SetInitialVersion(version uint64) {
 // DeleteVersions deletes a series of versions from the MutableTree.
 // Deprecated: please use DeleteVersionsRange instead.
 func (tree *MutableTree) DeleteVersions(versions ...int64) error {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	//tree.mtx.Lock()
+	//defer tree.mtx.Unlock()
 
 	logger.Debug("DELETING VERSIONS: %v\n", versions)
 
@@ -1105,8 +1105,8 @@ func (tree *MutableTree) DeleteVersions(versions ...int64) error {
 // An error is returned if any single version has active readers.
 // All writes happen in a single batch with a single commit.
 func (tree *MutableTree) DeleteVersionsRange(fromVersion, toVersion int64) error {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	//tree.mtx.Lock()
+	//defer tree.mtx.Unlock()
 
 	if err := tree.ndb.DeleteVersionsRange(fromVersion, toVersion); err != nil {
 		return err
@@ -1127,8 +1127,8 @@ func (tree *MutableTree) DeleteVersionsRange(fromVersion, toVersion int64) error
 // longer be accessed.
 func (tree *MutableTree) DeleteVersion(version int64) error {
 	logger.Debug("DELETE VERSION: %d\n", version)
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	//tree.mtx.Lock()
+	//defer tree.mtx.Unlock()
 
 	if err := tree.deleteVersion(version); err != nil {
 		return err
