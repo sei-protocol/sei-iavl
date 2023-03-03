@@ -47,7 +47,7 @@ func NewMutableTree(db dbm.DB, cacheSize int, skipFastStorageUpgrade bool) (*Mut
 // NewMutableTreeWithOpts returns a new tree with the specified options.
 func NewMutableTreeWithOpts(db dbm.DB, cacheSize int, opts *Options, skipFastStorageUpgrade bool) (*MutableTree, error) {
 	ndb := newNodeDB(db, cacheSize, opts)
-	head := &ImmutableTree{ndb: ndb, skipFastStorageUpgrade: skipFastStorageUpgrade, mtx: &sync.Mutex{}}
+	head := &ImmutableTree{ndb: ndb, skipFastStorageUpgrade: skipFastStorageUpgrade, mtx: &sync.RWMutex{}}
 
 	return &MutableTree{
 		ImmutableTree:            head,
