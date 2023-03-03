@@ -225,8 +225,6 @@ func (tree *MutableTree) Iterator(start, end []byte, ascending bool) (dbm.Iterat
 }
 
 func (tree *MutableTree) set(key []byte, value []byte) (orphans []*Node, updated bool, err error) {
-	tree.debugMtx.Lock()
-	defer tree.debugMtx.Unlock()
 	if value == nil {
 		return nil, updated, fmt.Errorf("attempt to store nil value at key '%s'", key)
 	}
