@@ -6,7 +6,6 @@ package iavl
 import (
 	"bytes"
 	"errors"
-
 	dbm "github.com/tendermint/tm-db"
 )
 
@@ -100,8 +99,10 @@ func (t *traversal) next() (*Node, error) {
 }
 
 func (t *traversal) doNext() (*Node, error, bool) {
-	t.tree.mtx.RLock()
-	defer t.tree.mtx.RUnlock()
+	//fmt.Printf("TMDEBUG Iterator locking")
+	//defer fmt.Printf("TMDEBUG Iterator unlocking")
+	//t.tree.mtx.RLock()
+	//defer t.tree.mtx.RUnlock()
 
 	// End of traversal.
 	if t.delayedNodes.length() == 0 {
