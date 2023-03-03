@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
-	"runtime/debug"
 	"sort"
 	"sync"
 
@@ -48,7 +47,7 @@ func NewMutableTree(db dbm.DB, cacheSize int, skipFastStorageUpgrade bool) (*Mut
 // NewMutableTreeWithOpts returns a new tree with the specified options.
 func NewMutableTreeWithOpts(db dbm.DB, cacheSize int, opts *Options, skipFastStorageUpgrade bool) (*MutableTree, error) {
 	ndb := newNodeDB(db, cacheSize, opts)
-	head := &ImmutableTree{ndb: ndb, skipFastStorageUpgrade: skipFastStorageUpgrade, mtx: &sync.Mutex{}, debugMtx: &sync.RWMutex{}}
+	head := &ImmutableTree{ndb: ndb, skipFastStorageUpgrade: skipFastStorageUpgrade, debugMtx: &sync.RWMutex{}}
 
 	return &MutableTree{
 		ImmutableTree:            head,
@@ -66,15 +65,15 @@ func NewMutableTreeWithOpts(db dbm.DB, cacheSize int, opts *Options, skipFastSto
 // IsEmpty returns whether or not the tree has any keys. Only trees that are
 // not empty can be saved.
 func (tree *MutableTree) IsEmpty() bool {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.debugMtx.Lock()
+	defer tree.debugMtx.Unlock()
 	return tree.ImmutableTree.Size() == 0
 }
 
 // VersionExists returns whether or not a version exists.
 func (tree *MutableTree) VersionExists(version int64) bool {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.debugMtx.Lock()
+	defer tree.debugMtx.Unlock()
 
 	if tree.allRootLoaded {
 		return tree.versions[version]
@@ -91,8 +90,8 @@ func (tree *MutableTree) VersionExists(version int64) bool {
 
 // AvailableVersions returns all available versions in ascending order
 func (tree *MutableTree) AvailableVersions() []int {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.debugMtx.Lock()
+	defer tree.debugMtx.Unlock()
 
 	res := make([]int, 0, len(tree.versions))
 	for i, v := range tree.versions {
@@ -131,8 +130,8 @@ func (tree *MutableTree) prepareOrphansSlice() []*Node {
 // to slices stored within IAVL. It returns true when an existing value was
 // updated, while false means it was a new key.
 func (tree *MutableTree) Set(key, value []byte) (updated bool, err error) {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.debugMtx.Lock()
+	defer tree.debugMtx.Unlock()
 	var orphaned []*Node
 	orphaned, updated, err = tree.set(key, value)
 	if err != nil {
@@ -148,8 +147,8 @@ func (tree *MutableTree) Set(key, value []byte) (updated bool, err error) {
 // Get returns the value of the specified key if it exists, or nil otherwise.
 // The returned value must not be modified, since it may point to data stored within IAVL.
 func (tree *MutableTree) Get(key []byte) ([]byte, error) {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.debugMtx.Lock()
+	defer tree.debugMtx.Unlock()
 	if tree.root == nil {
 		return nil, nil
 	}
@@ -226,10 +225,7 @@ func (tree *MutableTree) Iterator(start, end []byte, ascending bool) (dbm.Iterat
 }
 
 func (tree *MutableTree) set(key []byte, value []byte) (orphans []*Node, updated bool, err error) {
-	if !tree.debugMtx.TryLock() {
-		fmt.Printf("TMDEBUG - calling set from %s\n", debug.Stack())
-		panic("Race condition detected while setting values")
-	}
+	tree.debugMtx.Lock()
 	defer tree.debugMtx.Unlock()
 	if value == nil {
 		return nil, updated, fmt.Errorf("attempt to store nil value at key '%s'", key)
@@ -329,8 +325,8 @@ func (tree *MutableTree) recursiveSet(node *Node, key []byte, value []byte, orph
 // Remove removes a key from the working tree. The given key byte slice should not be modified
 // after this call, since it may point to data stored inside IAVL.
 func (tree *MutableTree) Remove(key []byte) ([]byte, bool, error) {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.debugMtx.Lock()
+	defer tree.debugMtx.Unlock()
 	val, orphaned, removed, err := tree.remove(key)
 	if err != nil {
 		return nil, false, err
@@ -491,8 +487,8 @@ func (tree *MutableTree) LazyLoadVersion(targetVersion int64) (int64, error) {
 	if latestVersion <= 0 {
 		if targetVersion <= 0 {
 			if !tree.skipFastStorageUpgrade {
-				tree.mtx.Lock()
-				defer tree.mtx.Unlock()
+				tree.debugMtx.Lock()
+				defer tree.debugMtx.Unlock()
 				_, err := tree.enableFastStorageAndCommitIfNotEnabled()
 				return 0, err
 			}
@@ -514,8 +510,8 @@ func (tree *MutableTree) LazyLoadVersion(targetVersion int64) (int64, error) {
 		return latestVersion, ErrVersionDoesNotExist
 	}
 
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.debugMtx.Lock()
+	defer tree.debugMtx.Unlock()
 
 	tree.versions[targetVersion] = true
 
@@ -523,7 +519,6 @@ func (tree *MutableTree) LazyLoadVersion(targetVersion int64) (int64, error) {
 		ndb:                    tree.ndb,
 		version:                targetVersion,
 		skipFastStorageUpgrade: tree.skipFastStorageUpgrade,
-		mtx:                    tree.mtx,
 		debugMtx:               tree.debugMtx,
 	}
 	if len(rootHash) > 0 {
@@ -559,8 +554,8 @@ func (tree *MutableTree) LoadVersion(targetVersion int64) (int64, error) {
 	if len(roots) == 0 {
 		if targetVersion <= 0 {
 			if !tree.skipFastStorageUpgrade {
-				tree.mtx.Lock()
-				defer tree.mtx.Unlock()
+				tree.debugMtx.Lock()
+				defer tree.debugMtx.Unlock()
 				_, err := tree.enableFastStorageAndCommitIfNotEnabled()
 				return 0, err
 			}
@@ -572,8 +567,8 @@ func (tree *MutableTree) LoadVersion(targetVersion int64) (int64, error) {
 	firstVersion := int64(0)
 	latestVersion := int64(0)
 
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.debugMtx.Lock()
+	defer tree.debugMtx.Unlock()
 
 	var latestRoot []byte
 	for version, r := range roots {
@@ -601,7 +596,6 @@ func (tree *MutableTree) LoadVersion(targetVersion int64) (int64, error) {
 		ndb:                    tree.ndb,
 		version:                latestVersion,
 		skipFastStorageUpgrade: tree.skipFastStorageUpgrade,
-		mtx:                    tree.mtx,
 		debugMtx:               tree.debugMtx,
 	}
 
@@ -647,8 +641,8 @@ func (tree *MutableTree) LoadVersionForOverwriting(targetVersion int64) (int64, 
 
 	tree.ndb.resetLatestVersion(latestVersion)
 
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.debugMtx.Lock()
+	defer tree.debugMtx.Unlock()
 
 	for v := range tree.versions {
 		if v > targetVersion {
@@ -716,8 +710,8 @@ func (tree *MutableTree) enableFastStorageAndCommitIfNotEnabled() (bool, error) 
 }
 
 func (tree *MutableTree) enableFastStorageAndCommitLocked() error {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.debugMtx.Lock()
+	defer tree.debugMtx.Unlock()
 	return tree.enableFastStorageAndCommit()
 }
 
@@ -759,15 +753,14 @@ func (tree *MutableTree) GetImmutable(version int64) (*ImmutableTree, error) {
 		return nil, ErrVersionDoesNotExist
 	}
 
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.debugMtx.Lock()
+	defer tree.debugMtx.Unlock()
 	if len(rootHash) == 0 {
 		tree.versions[version] = true
 		return &ImmutableTree{
 			ndb:                    tree.ndb,
 			version:                version,
 			skipFastStorageUpgrade: tree.skipFastStorageUpgrade,
-			mtx:                    tree.mtx,
 			debugMtx:               tree.debugMtx,
 		}, nil
 	}
@@ -782,7 +775,6 @@ func (tree *MutableTree) GetImmutable(version int64) (*ImmutableTree, error) {
 		ndb:                    tree.ndb,
 		version:                version,
 		skipFastStorageUpgrade: tree.skipFastStorageUpgrade,
-		mtx:                    tree.mtx,
 		debugMtx:               tree.debugMtx,
 	}, nil
 }
@@ -797,7 +789,6 @@ func (tree *MutableTree) Rollback() {
 			ndb:                    tree.ndb,
 			version:                0,
 			skipFastStorageUpgrade: tree.skipFastStorageUpgrade,
-			mtx:                    tree.mtx,
 			debugMtx:               tree.debugMtx,
 		}
 	}
@@ -895,8 +886,8 @@ func (tree *MutableTree) SaveVersion() ([]byte, int64, error) {
 	}
 
 	if tree.VersionExists(version) {
-		tree.mtx.Lock()
-		defer tree.mtx.Unlock()
+		tree.debugMtx.Lock()
+		defer tree.debugMtx.Unlock()
 		// If the version already exists, return an error as we're attempting to overwrite.
 		// However, the same hash means idempotent (i.e. no-op).
 		existingHash, err := tree.ndb.getRoot(version)
@@ -926,8 +917,8 @@ func (tree *MutableTree) SaveVersion() ([]byte, int64, error) {
 		return nil, version, fmt.Errorf("version %d was already saved to different hash %X (existing hash %X)", version, newHash, existingHash)
 	}
 
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.debugMtx.Lock()
+	defer tree.debugMtx.Unlock()
 
 	if v, err := tree.commitVersion(version, false); err != nil {
 		return nil, v, err
@@ -1080,8 +1071,8 @@ func (tree *MutableTree) SetInitialVersion(version uint64) {
 // DeleteVersions deletes a series of versions from the MutableTree.
 // Deprecated: please use DeleteVersionsRange instead.
 func (tree *MutableTree) DeleteVersions(versions ...int64) error {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.debugMtx.Lock()
+	defer tree.debugMtx.Unlock()
 
 	logger.Debug("DELETING VERSIONS: %v\n", versions)
 
@@ -1116,8 +1107,8 @@ func (tree *MutableTree) DeleteVersions(versions ...int64) error {
 // An error is returned if any single version has active readers.
 // All writes happen in a single batch with a single commit.
 func (tree *MutableTree) DeleteVersionsRange(fromVersion, toVersion int64) error {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.debugMtx.Lock()
+	defer tree.debugMtx.Unlock()
 
 	if err := tree.ndb.DeleteVersionsRange(fromVersion, toVersion); err != nil {
 		return err
@@ -1138,8 +1129,8 @@ func (tree *MutableTree) DeleteVersionsRange(fromVersion, toVersion int64) error
 // longer be accessed.
 func (tree *MutableTree) DeleteVersion(version int64) error {
 	logger.Debug("DELETE VERSION: %d\n", version)
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.debugMtx.Lock()
+	defer tree.debugMtx.Unlock()
 
 	if err := tree.deleteVersion(version); err != nil {
 		return err
