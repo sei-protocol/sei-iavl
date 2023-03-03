@@ -226,7 +226,11 @@ func (tree *MutableTree) Iterator(start, end []byte, ascending bool) (dbm.Iterat
 }
 
 func (tree *MutableTree) set(key []byte, value []byte) (orphans []*Node, updated bool, err error) {
-	fmt.Printf("TMDEBUG - calling set from %s\n", debug.Stack())
+	if !tree.debugMtx.TryLock() {
+		fmt.Printf("TMDEBUG - calling set from %s\n", debug.Stack())
+		panic("Race condition detected while setting values")
+	}
+	defer tree.debugMtx.Unlock()
 	if value == nil {
 		return nil, updated, fmt.Errorf("attempt to store nil value at key '%s'", key)
 	}

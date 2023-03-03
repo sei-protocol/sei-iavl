@@ -20,6 +20,7 @@ type ImmutableTree struct {
 	version                int64
 	skipFastStorageUpgrade bool
 	mtx                    *sync.Mutex
+	debugMtx               *sync.RWMutex
 }
 
 // NewImmutableTree creates both in-memory and persistent instances
