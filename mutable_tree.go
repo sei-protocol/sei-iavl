@@ -915,13 +915,12 @@ func (tree *MutableTree) SaveVersion() ([]byte, int64, error) {
 		return nil, version, fmt.Errorf("version %d was already saved to different hash %X (existing hash %X)", version, newHash, existingHash)
 	}
 
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
-
 	if v, err := tree.commitVersion(version, false); err != nil {
 		return nil, v, err
 	}
 
+	tree.mtx.Lock()
+	defer tree.mtx.Unlock()
 	tree.version = version
 	tree.versions[version] = true
 
@@ -1116,6 +1115,9 @@ func (tree *MutableTree) DeleteVersionsRange(fromVersion, toVersion int64) error
 		return err
 	}
 
+	tree.mtx.Lock()
+	defer tree.mtx.Unlock()
+
 	for version := fromVersion; version < toVersion; version++ {
 		delete(tree.versions, version)
 	}
@@ -1137,6 +1139,8 @@ func (tree *MutableTree) DeleteVersion(version int64) error {
 	if err := tree.ndb.Commit(); err != nil {
 		return err
 	}
+	tree.mtx.Lock()
+	defer tree.mtx.Unlock()
 
 	delete(tree.versions, version)
 	return nil
