@@ -48,7 +48,7 @@ func NewMutableTree(db dbm.DB, cacheSize int, skipFastStorageUpgrade bool) (*Mut
 // NewMutableTreeWithOpts returns a new tree with the specified options.
 func NewMutableTreeWithOpts(db dbm.DB, cacheSize int, opts *Options, skipFastStorageUpgrade bool) (*MutableTree, error) {
 	ndb := newNodeDB(db, cacheSize, opts)
-	head := &ImmutableTree{ndb: ndb, skipFastStorageUpgrade: skipFastStorageUpgrade, mtx: &sync.Mutex{}}
+	head := &ImmutableTree{ndb: ndb, skipFastStorageUpgrade: skipFastStorageUpgrade, mtx: &sync.Mutex{}, debugMtx: &sync.RWMutex{}}
 
 	return &MutableTree{
 		ImmutableTree:            head,
@@ -524,6 +524,7 @@ func (tree *MutableTree) LazyLoadVersion(targetVersion int64) (int64, error) {
 		version:                targetVersion,
 		skipFastStorageUpgrade: tree.skipFastStorageUpgrade,
 		mtx:                    tree.mtx,
+		debugMtx:               tree.debugMtx,
 	}
 	if len(rootHash) > 0 {
 		// If rootHash is empty then root of tree should be nil
@@ -601,6 +602,7 @@ func (tree *MutableTree) LoadVersion(targetVersion int64) (int64, error) {
 		version:                latestVersion,
 		skipFastStorageUpgrade: tree.skipFastStorageUpgrade,
 		mtx:                    tree.mtx,
+		debugMtx:               tree.debugMtx,
 	}
 
 	if len(latestRoot) != 0 {
@@ -766,6 +768,7 @@ func (tree *MutableTree) GetImmutable(version int64) (*ImmutableTree, error) {
 			version:                version,
 			skipFastStorageUpgrade: tree.skipFastStorageUpgrade,
 			mtx:                    tree.mtx,
+			debugMtx:               tree.debugMtx,
 		}, nil
 	}
 	tree.versions[version] = true
@@ -780,6 +783,7 @@ func (tree *MutableTree) GetImmutable(version int64) (*ImmutableTree, error) {
 		version:                version,
 		skipFastStorageUpgrade: tree.skipFastStorageUpgrade,
 		mtx:                    tree.mtx,
+		debugMtx:               tree.debugMtx,
 	}, nil
 }
 
@@ -794,6 +798,7 @@ func (tree *MutableTree) Rollback() {
 			version:                0,
 			skipFastStorageUpgrade: tree.skipFastStorageUpgrade,
 			mtx:                    tree.mtx,
+			debugMtx:               tree.debugMtx,
 		}
 	}
 	tree.orphans = map[string]int64{}

@@ -106,7 +106,7 @@ func (t *traversal) doNext() (*Node, error, bool) {
 		fmt.Printf("TMDEBUG - calling iterator.next() from %s\n", debug.Stack())
 		panic("Race condition detected while iterating")
 	}
-	defer t.tree.debugMtx.Unlock()
+	defer t.tree.debugMtx.RUnlock()
 
 	// End of traversal.
 	if t.delayedNodes.length() == 0 {
