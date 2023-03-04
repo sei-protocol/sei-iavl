@@ -1069,8 +1069,6 @@ func (tree *MutableTree) SetInitialVersion(version uint64) {
 // DeleteVersions deletes a series of versions from the MutableTree.
 // Deprecated: please use DeleteVersionsRange instead.
 func (tree *MutableTree) DeleteVersions(versions ...int64) error {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
 
 	logger.Debug("DELETING VERSIONS: %v\n", versions)
 
