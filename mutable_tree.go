@@ -47,7 +47,7 @@ func NewMutableTree(db dbm.DB, cacheSize int, skipFastStorageUpgrade bool) (*Mut
 // NewMutableTreeWithOpts returns a new tree with the specified options.
 func NewMutableTreeWithOpts(db dbm.DB, cacheSize int, opts *Options, skipFastStorageUpgrade bool) (*MutableTree, error) {
 	ndb := newNodeDB(db, cacheSize, opts)
-	head := &ImmutableTree{ndb: ndb, skipFastStorageUpgrade: skipFastStorageUpgrade, mtx: &sync.Mutex{}}
+	head := &ImmutableTree{ndb: ndb, skipFastStorageUpgrade: skipFastStorageUpgrade, mtx: &sync.RWMutex{}}
 
 	return &MutableTree{
 		ImmutableTree:            head,
@@ -65,15 +65,15 @@ func NewMutableTreeWithOpts(db dbm.DB, cacheSize int, opts *Options, skipFastSto
 // IsEmpty returns whether or not the tree has any keys. Only trees that are
 // not empty can be saved.
 func (tree *MutableTree) IsEmpty() bool {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.mtx.RLock()
+	defer tree.mtx.RUnlock()
 	return tree.ImmutableTree.Size() == 0
 }
 
 // VersionExists returns whether or not a version exists.
 func (tree *MutableTree) VersionExists(version int64) bool {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.mtx.RLock()
+	defer tree.mtx.RUnlock()
 
 	if tree.allRootLoaded {
 		return tree.versions[version]
@@ -90,8 +90,8 @@ func (tree *MutableTree) VersionExists(version int64) bool {
 
 // AvailableVersions returns all available versions in ascending order
 func (tree *MutableTree) AvailableVersions() []int {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.mtx.RLock()
+	defer tree.mtx.RUnlock()
 
 	res := make([]int, 0, len(tree.versions))
 	for i, v := range tree.versions {
@@ -147,8 +147,8 @@ func (tree *MutableTree) Set(key, value []byte) (updated bool, err error) {
 // Get returns the value of the specified key if it exists, or nil otherwise.
 // The returned value must not be modified, since it may point to data stored within IAVL.
 func (tree *MutableTree) Get(key []byte) ([]byte, error) {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.mtx.RLock()
+	defer tree.mtx.RUnlock()
 	if tree.root == nil {
 		return nil, nil
 	}

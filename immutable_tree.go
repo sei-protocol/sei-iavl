@@ -19,7 +19,7 @@ type ImmutableTree struct {
 	ndb                    *nodeDB
 	version                int64
 	skipFastStorageUpgrade bool
-	mtx                    *sync.Mutex
+	mtx                    *sync.RWMutex
 }
 
 // NewImmutableTree creates both in-memory and persistent instances
@@ -32,7 +32,7 @@ func NewImmutableTree(db dbm.DB, cacheSize int, skipFastStorageUpgrade bool) *Im
 		// NodeDB-backed Tree.
 		ndb:                    newNodeDB(db, cacheSize, nil),
 		skipFastStorageUpgrade: skipFastStorageUpgrade,
-		mtx:                    &sync.Mutex{},
+		mtx:                    &sync.RWMutex{},
 	}
 }
 
@@ -42,7 +42,7 @@ func NewImmutableTreeWithOpts(db dbm.DB, cacheSize int, opts *Options, skipFastS
 		// NodeDB-backed Tree.
 		ndb:                    newNodeDB(db, cacheSize, opts),
 		skipFastStorageUpgrade: skipFastStorageUpgrade,
-		mtx:                    &sync.Mutex{},
+		mtx:                    &sync.RWMutex{},
 	}
 }
 

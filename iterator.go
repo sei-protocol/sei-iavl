@@ -103,8 +103,8 @@ func (t *traversal) next() (*Node, error) {
 
 func (t *traversal) doNext() (*Node, error, bool) {
 	if !t.unlocked {
-		t.tree.mtx.Lock()
-		defer t.tree.mtx.Unlock()
+		t.tree.mtx.RLock()
+		defer t.tree.mtx.RUnlock()
 	}
 
 	// End of traversal.
