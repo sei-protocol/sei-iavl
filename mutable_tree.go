@@ -37,7 +37,7 @@ type MutableTree struct {
 	unsavedFastNodeRemovals  map[string]interface{} // FastNodes that have not yet been removed from disk
 	ndb                      *nodeDB
 	skipFastStorageUpgrade   bool // If true, the tree will work like no fast storage and always not upgrade fast storage
-	mtx                      *sync.Mutex
+	mtx                      *sync.RWMutex
 }
 
 // NewMutableTree returns a new tree with the specified cache size and datastore.
@@ -60,7 +60,7 @@ func NewMutableTreeWithOpts(db dbm.DB, cacheSize int, opts *Options, skipFastSto
 		unsavedFastNodeRemovals:  make(map[string]interface{}),
 		ndb:                      ndb,
 		skipFastStorageUpgrade:   skipFastStorageUpgrade,
-		mtx:                      &sync.Mutex{},
+		mtx:                      &sync.RWMutex{},
 	}, nil
 }
 
@@ -149,8 +149,8 @@ func (tree *MutableTree) Set(key, value []byte) (updated bool, err error) {
 // Get returns the value of the specified key if it exists, or nil otherwise.
 // The returned value must not be modified, since it may point to data stored within IAVL.
 func (tree *MutableTree) Get(key []byte) ([]byte, error) {
-	tree.mtx.Lock()
-	defer tree.mtx.Unlock()
+	tree.mtx.RLock()
+	defer tree.mtx.RUnlock()
 	if tree.root == nil {
 		return nil, nil
 	}
