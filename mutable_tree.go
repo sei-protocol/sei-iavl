@@ -975,6 +975,8 @@ func (tree *MutableTree) commitVersion(version int64, silentSaveRootError bool) 
 		}
 	}
 
+	// fmt.Printf("commitVersion wrote %d bytes for version %d\n", tree.ndb.writeBytes, version)
+
 	if !tree.skipFastStorageUpgrade {
 		if err := tree.saveFastNodeVersion(); err != nil {
 			return version, err

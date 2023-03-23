@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/syndtr/goleveldb/leveldb/util"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/iavl/cache"
@@ -79,6 +80,9 @@ type nodeDB struct {
 	latestVersion  int64            // Latest version of nodeDB.
 	nodeCache      cache.Cache      // Cache for nodes in the regular tree that consists of key-value pairs at any version.
 	fastNodeCache  cache.Cache      // Cache for nodes in the fast index that represents only key-value pairs at the latest version.
+
+	writeBytes  int
+	deleteBytes int
 }
 
 func newNodeDB(db dbm.DB, cacheSize int, opts *Options) *nodeDB {
@@ -201,7 +205,9 @@ func (ndb *nodeDB) SaveNode(node *Node) error {
 		return err
 	}
 
-	if err := ndb.batch.Set(ndb.nodeKey(node.GetHash()), buf.Bytes()); err != nil {
+	bz := buf.Bytes()
+	ndb.writeBytes += len(bz)
+	if err := ndb.batch.Set(ndb.nodeKey(node.GetHash()), bz); err != nil {
 		return err
 	}
 	logger.Debug("BATCH SAVE %X %p\n", node.GetHash(), node)
@@ -543,6 +549,12 @@ func (ndb *nodeDB) DeleteVersionsRange(fromVersion, toVersion int64) error {
 		}
 	}
 
+	if goleveldb, ok := ndb.db.(*dbm.GoLevelDB); ok {
+		if err := goleveldb.DB().CompactRange(util.Range{Start: nil, Limit: nil}); err != nil {
+			fmt.Printf("error compacting DB: %s\n", err)
+		}
+	}
+
 	// If the predecessor is earlier than the beginning of the lifetime, we can delete the orphan.
 	// Otherwise, we shorten its lifetime, by moving its endpoint to the predecessor version.
 	for version := fromVersion; version < toVersion; version++ {
@@ -880,6 +892,8 @@ func (ndb *nodeDB) Commit() error {
 
 	ndb.batch.Close()
 	ndb.batch = ndb.db.NewBatch()
+
+	ndb.writeBytes = 0
 
 	return nil
 }
