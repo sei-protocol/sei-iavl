@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/syndtr/goleveldb/leveldb/util"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/iavl/cache"
@@ -549,10 +548,12 @@ func (ndb *nodeDB) DeleteVersionsRange(fromVersion, toVersion int64) error {
 		}
 	}
 
-	if goleveldb, ok := ndb.db.(*dbm.GoLevelDB); ok {
-		if err := goleveldb.DB().CompactRange(util.Range{Start: nil, Limit: nil}); err != nil {
-			fmt.Printf("error compacting DB: %s\n", err)
+	if prefix, ok := ndb.db.(*dbm.PrefixDB); ok {
+		if err := prefix.Housekeep(); err != nil {
+			fmt.Printf("TONYTEST error housekeeping DB: %s\n", err)
 		}
+	} else {
+		fmt.Println("TONYTEST not prefix DB")
 	}
 
 	// If the predecessor is earlier than the beginning of the lifetime, we can delete the orphan.
