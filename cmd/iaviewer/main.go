@@ -38,12 +38,13 @@ func main() {
 		}
 	}
 
+	fmt.Printf("Start loading the tree for version %d ...\n", version)
 	tree, err := ReadTree(args[1], version, []byte(args[2]))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading data: %s\n", err)
 		os.Exit(1)
 	}
-
+	fmt.Printf("Completed loading the tree\n")
 	switch args[0] {
 	case "data":
 		PrintKeys(tree)
