@@ -548,13 +548,13 @@ func (ndb *nodeDB) DeleteVersionsRange(fromVersion, toVersion int64) error {
 		}
 	}
 
-	if prefix, ok := ndb.db.(*dbm.PrefixDB); ok {
-		if err := prefix.Housekeep(); err != nil {
-			fmt.Printf("TONYTEST error housekeeping DB: %s\n", err)
-		}
-	} else {
-		fmt.Println("TONYTEST not prefix DB")
-	}
+	// if prefix, ok := ndb.db.(*dbm.PrefixDB); ok {
+	// 	if err := prefix.Housekeep(); err != nil {
+	// 		fmt.Printf("TONYTEST error housekeeping DB: %s\n", err)
+	// 	}
+	// } else {
+	// 	fmt.Println("TONYTEST not prefix DB")
+	// }
 
 	// If the predecessor is earlier than the beginning of the lifetime, we can delete the orphan.
 	// Otherwise, we shorten its lifetime, by moving its endpoint to the predecessor version.
