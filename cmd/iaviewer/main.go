@@ -147,6 +147,7 @@ func PrintKeys(tree *iavl.MutableTree) {
 		}
 		return false
 	})
+	fmt.Printf("Final total key count %d, total key size %d, total value size %d\n", count, totalKeySize, totalValSize)
 }
 
 // parseWeaveKey assumes a separating : where all in front should be ascii,
