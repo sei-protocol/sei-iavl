@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"os"
@@ -133,8 +132,8 @@ func PrintKeys(tree *iavl.MutableTree) {
 	fmt.Println("Printing all keys with hashed values (to detect diff)")
 	tree.Iterate(func(key []byte, value []byte) bool {
 		printKey := parseWeaveKey(key)
-		digest := sha256.Sum256(value)
-		fmt.Printf("  %s\n    %X\n", printKey, digest)
+		//digest := sha256.Sum256(value)
+		fmt.Printf("kszie %d, vsize %d\n  key:%s\n    value:%X\n", len(key), len(value), printKey, value)
 		return false
 	})
 }
