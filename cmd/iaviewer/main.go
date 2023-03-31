@@ -134,11 +134,13 @@ func PrintKeys(tree *iavl.MutableTree) {
 	totalKeySize := 0
 	totalValSize := 0
 	count := 0
+	uniqueMap := map[string]bool{}
 	tree.Iterate(func(key []byte, value []byte) bool {
 		//digest := sha256.Sum256(value)
 		totalKeySize += len(key)
 		totalValSize += len(value)
 		count++
+		uniqueMap[string(key)] = true
 		if count%10000 == 0 {
 			printKey := parseWeaveKey(key)
 			fmt.Printf("key size %d, value size %d\n", len(key), len(value))
@@ -147,7 +149,7 @@ func PrintKeys(tree *iavl.MutableTree) {
 		}
 		return false
 	})
-	fmt.Printf("Final total key count %d, total key size %d, total value size %d\n", count, totalKeySize, totalValSize)
+	fmt.Printf("Final total key count %d, total unique keys %d, total key size %d, total value size %d, \n", count, totalKeySize, totalValSize, len(uniqueMap))
 }
 
 // parseWeaveKey assumes a separating : where all in front should be ascii,
