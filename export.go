@@ -9,7 +9,7 @@ import (
 // exportBufferSize is the number of nodes to buffer in the exporter. It improves throughput by
 // processing multiple nodes per context switch, but take care to avoid excessive memory usage,
 // especially since callers may export several IAVL stores in parallel (e.g. the Cosmos SDK).
-const exportBufferSize = 32
+const exportBufferSize = 5000000
 
 // ExportDone is returned by Exporter.Next() when all items have been exported.
 // nolint:revive
@@ -47,6 +47,10 @@ func newExporter(tree *ImmutableTree) *Exporter {
 	go exporter.export(ctx)
 
 	return exporter
+}
+
+func (e *Exporter) GetChannelSize() int {
+	return len(e.ch)
 }
 
 // export exports nodes

@@ -10,6 +10,7 @@ import (
 	"io"
 	"math"
 	"sync"
+	"time"
 
 	"github.com/cosmos/iavl/cache"
 	"github.com/pkg/errors"
@@ -681,15 +682,21 @@ func (node *Node) traversePost(t *ImmutableTree, ascending bool, cb func(*Node) 
 	})
 }
 
+var TotalTreeNextLatency int64 = 0
+
 func (node *Node) traverseInRange(tree *ImmutableTree, start, end []byte, ascending bool, inclusive bool, post bool, cb func(*Node) bool) bool {
 	stop := false
 	t := node.newTraversal(tree, start, end, ascending, inclusive, post, false)
 	// TODO: figure out how to handle these errors
-	for node2, err := t.next(); node2 != nil && err == nil; node2, err = t.next() {
+	for node2, err := t.next(); node2 != nil && err == nil; {
 		stop = cb(node2)
 		if stop {
 			return stop
 		}
+		startTime := time.Now()
+		node2, err = t.next()
+		TotalTreeNextLatency += time.Since(startTime).Microseconds()
+
 	}
 	return stop
 }
