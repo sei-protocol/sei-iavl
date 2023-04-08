@@ -6,6 +6,7 @@ package iavl
 import (
 	"bytes"
 	"errors"
+	"time"
 
 	dbm "github.com/tendermint/tm-db"
 )
@@ -101,12 +102,18 @@ func (t *traversal) next() (*Node, error) {
 	return t.next()
 }
 
+var TotalDoNextLatency int64 = 0
+var TotalDBReadLatency int64 = 0
+
 func (t *traversal) doNext() (*Node, error, bool) {
 	// End of traversal.
 	if t.delayedNodes.length() == 0 {
 		return nil, nil, true
 	}
-
+	startTime := time.Now()
+	defer func() {
+		TotalDoNextLatency += time.Since(startTime).Microseconds()
+	}()
 	node, delayed := t.delayedNodes.pop()
 
 	// Already expanded, immediately return.
@@ -134,7 +141,9 @@ func (t *traversal) doNext() (*Node, error, bool) {
 		if t.ascending {
 			if beforeEnd {
 				// push the delayed traversal for the right nodes,
+				startReadTime := time.Now()
 				rightNode, err := node.getRightNode(t.tree)
+				TotalDBReadLatency += time.Since(startReadTime).Microseconds()
 				if err != nil {
 					return nil, err, true
 				}
@@ -142,7 +151,9 @@ func (t *traversal) doNext() (*Node, error, bool) {
 			}
 			if afterStart {
 				// push the delayed traversal for the left nodes,
+				startReadTime := time.Now()
 				leftNode, err := node.getLeftNode(t.tree)
+				TotalDBReadLatency += time.Since(startReadTime).Microseconds()
 				if err != nil {
 					return nil, err, true
 				}
@@ -153,7 +164,9 @@ func (t *traversal) doNext() (*Node, error, bool) {
 			// We traverse through the right subtree, then the left subtree.
 			if afterStart {
 				// push the delayed traversal for the left nodes,
+				startReadTime := time.Now()
 				leftNode, err := node.getLeftNode(t.tree)
+				TotalDBReadLatency += time.Since(startReadTime).Microseconds()
 				if err != nil {
 					return nil, err, true
 				}
@@ -161,7 +174,9 @@ func (t *traversal) doNext() (*Node, error, bool) {
 			}
 			if beforeEnd {
 				// push the delayed traversal for the right nodes,
+				startReadTime := time.Now()
 				rightNode, err := node.getRightNode(t.tree)
+				TotalDBReadLatency += time.Since(startReadTime).Microseconds()
 				if err != nil {
 					return nil, err, true
 				}
