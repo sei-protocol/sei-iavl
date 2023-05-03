@@ -543,6 +543,7 @@ func (ndb *nodeDB) DeleteVersionsRange(fromVersion, toVersion int64) error {
 		}
 	}
 
+	deletedOrphans, deletedHashes, deletedEntries := 0, 0, 0
 	// If the predecessor is earlier than the beginning of the lifetime, we can delete the orphan.
 	// Otherwise, we shorten its lifetime, by moving its endpoint to the predecessor version.
 	for version := fromVersion; version < toVersion; version++ {
@@ -552,10 +553,12 @@ func (ndb *nodeDB) DeleteVersionsRange(fromVersion, toVersion int64) error {
 			if err := ndb.batch.Delete(key); err != nil {
 				return err
 			}
+			deletedOrphans++
 			if from > predecessor {
 				if err := ndb.batch.Delete(ndb.nodeKey(hash)); err != nil {
 					return err
 				}
+				deletedHashes++
 				ndb.nodeCache.Remove(hash)
 			} else {
 				if err := ndb.saveOrphan(hash, from, predecessor); err != nil {
@@ -574,9 +577,11 @@ func (ndb *nodeDB) DeleteVersionsRange(fromVersion, toVersion int64) error {
 		if err := ndb.batch.Delete(k); err != nil {
 			return err
 		}
+		deletedEntries++
 		return nil
 	})
 
+	fmt.Printf("TONYTEST: deleted %d orphans, %d hashes, %d entries\n", deletedOrphans, deletedHashes, deletedEntries)
 	if err != nil {
 		return err
 	}

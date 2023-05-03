@@ -1069,6 +1069,7 @@ func (tree *MutableTree) SetInitialVersion(version uint64) {
 // Deprecated: please use DeleteVersionsRange instead.
 func (tree *MutableTree) DeleteVersions(versions ...int64) error {
 	logger.Debug("DELETING VERSIONS: %v\n", versions)
+	fmt.Printf("TONYTEST: deleting versions %v\n", versions)
 
 	if len(versions) == 0 {
 		return nil
@@ -1089,7 +1090,9 @@ func (tree *MutableTree) DeleteVersions(versions ...int64) error {
 	}
 
 	for fromVersion, sortedBatchSize := range intervals {
+		fmt.Printf("TONYTEST: deleting interval %d %d\n", fromVersion, sortedBatchSize)
 		if err := tree.DeleteVersionsRange(fromVersion, fromVersion+sortedBatchSize); err != nil {
+			fmt.Printf("TONYTEST: deleting interval error %s\n", err)
 			return err
 		}
 	}
