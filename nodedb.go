@@ -528,6 +528,7 @@ func (ndb *nodeDB) DeleteVersionsRange(fromVersion, toVersion int64) error {
 		fmt.Printf("[Iavl-Debug] DeleteVersionsRange took %d ms to delete version from %d to %d\n", time.Since(startTime).Milliseconds(), fromVersion, toVersion)
 	}()
 
+	getLatestTime := time.Now()
 	latest, err := ndb.getLatestVersion()
 	if err != nil {
 		return err
@@ -535,11 +536,14 @@ func (ndb *nodeDB) DeleteVersionsRange(fromVersion, toVersion int64) error {
 	if latest < toVersion {
 		return errors.Errorf("cannot delete latest saved version (%d)", latest)
 	}
+	fmt.Printf("[Iavl-Debug] getLatestVerion took %d micro\n", time.Since(getLatestTime).Microseconds())
 
+	getPreviousVersion := time.Now()
 	predecessor, err := ndb.getPreviousVersion(fromVersion)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("[Iavl-Debug] getPreviousVersion took %d micro\n", time.Since(getPreviousVersion).Microseconds())
 
 	for v, r := range ndb.versionReaders {
 		if v < toVersion && v > predecessor && r != 0 {
@@ -549,28 +553,23 @@ func (ndb *nodeDB) DeleteVersionsRange(fromVersion, toVersion int64) error {
 
 	// If the predecessor is earlier than the beginning of the lifetime, we can delete the orphan.
 	// Otherwise, we shorten its lifetime, by moving its endpoint to the predecessor version.
+	forLoopStartTime := time.Now()
 	for version := fromVersion; version < toVersion; version++ {
 		err := ndb.traverseOrphansVersion(version, func(key, hash []byte) error {
 			var from, to int64
-			deleteStart := time.Now()
 			orphanKeyFormat.Scan(key, &to, &from)
 			if err := ndb.batch.Delete(key); err != nil {
 				return err
 			}
-			deleteLatency := time.Since(deleteStart).Microseconds()
 			if from > predecessor {
-				deleteKeyStart := time.Now()
 				if err := ndb.batch.Delete(ndb.nodeKey(hash)); err != nil {
 					return err
 				}
 				ndb.nodeCache.Remove(hash)
-				fmt.Printf("[Iavl-Debug] Delete key took %d micro, delete took %d micro\n", time.Since(deleteKeyStart).Microseconds(), deleteLatency)
 			} else {
-				saveOrphanStart := time.Now()
 				if err := ndb.saveOrphan(hash, from, predecessor); err != nil {
 					return err
 				}
-				fmt.Printf("[Iavl-Debug] SaveOrphan took %d micro\n", time.Since(saveOrphanStart).Microseconds())
 			}
 			return nil
 		})
@@ -578,6 +577,7 @@ func (ndb *nodeDB) DeleteVersionsRange(fromVersion, toVersion int64) error {
 			return err
 		}
 	}
+	fmt.Printf("[Iavl-Debug] For loop delete took %d micro\n", time.Since(forLoopStartTime).Microseconds())
 
 	// Delete the version root entries
 	traverStartTime := time.Now()
