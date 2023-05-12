@@ -552,23 +552,25 @@ func (ndb *nodeDB) DeleteVersionsRange(fromVersion, toVersion int64) error {
 	for version := fromVersion; version < toVersion; version++ {
 		err := ndb.traverseOrphansVersion(version, func(key, hash []byte) error {
 			var from, to int64
+			deleteStart := time.Now()
 			orphanKeyFormat.Scan(key, &to, &from)
 			if err := ndb.batch.Delete(key); err != nil {
 				return err
 			}
+			deleteLatency := time.Since(deleteStart).Microseconds()
 			if from > predecessor {
-				deleteStart := time.Now()
+				deleteKeyStart := time.Now()
 				if err := ndb.batch.Delete(ndb.nodeKey(hash)); err != nil {
 					return err
 				}
 				ndb.nodeCache.Remove(hash)
-				fmt.Printf("[Iavl-Debug] Delete nodeKey + remove from nodeCache took %d ms\n", time.Since(deleteStart).Milliseconds())
+				fmt.Printf("[Iavl-Debug] Delete key took %d micro, delete took %d micro\n", time.Since(deleteKeyStart).Microseconds(), deleteLatency)
 			} else {
 				saveOrphanStart := time.Now()
 				if err := ndb.saveOrphan(hash, from, predecessor); err != nil {
 					return err
 				}
-				fmt.Printf("[Iavl-Debug] SaveOrphan took %d ms\n", time.Since(saveOrphanStart).Milliseconds())
+				fmt.Printf("[Iavl-Debug] SaveOrphan took %d micro\n", time.Since(saveOrphanStart).Microseconds())
 			}
 			return nil
 		})
@@ -585,7 +587,7 @@ func (ndb *nodeDB) DeleteVersionsRange(fromVersion, toVersion int64) error {
 		}
 		return nil
 	})
-	fmt.Printf("[Iavl-Debug] traverseRange took %d ms\n", time.Since(traverStartTime).Milliseconds())
+	fmt.Printf("[Iavl-Debug] traverseRange took %d micro\n", time.Since(traverStartTime).Microseconds())
 
 	if err != nil {
 		return err
