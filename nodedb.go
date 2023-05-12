@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
+	"github.com/pkg/errors"
+	dbm "github.com/tendermint/tm-db"
 	"math"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/pkg/errors"
-	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/iavl/cache"
 	"github.com/cosmos/iavl/internal/logger"
@@ -521,9 +520,13 @@ func (ndb *nodeDB) DeleteVersionsRange(fromVersion, toVersion int64) error {
 	if toVersion == 0 {
 		return errors.New("toVersion must be greater than 0")
 	}
+	startTime := time.Now()
 
 	ndb.mtx.Lock()
 	defer ndb.mtx.Unlock()
+	defer func() {
+		fmt.Printf("[Iavl-Debug] DeleteVersionsRange took %d ms to delete version from %d to %d\n", time.Since(startTime).Microseconds(), fromVersion, toVersion)
+	}()
 
 	latest, err := ndb.getLatestVersion()
 	if err != nil {
@@ -866,10 +869,6 @@ func (ndb *nodeDB) getFastIterator(start, end []byte, ascending bool) (dbm.Itera
 
 // Write to disk.
 func (ndb *nodeDB) Commit() error {
-	startTime := time.Now()
-	defer func() {
-		fmt.Printf("[Iavl-Debug] ndb Commit() took %d ms to write to disk", time.Since(startTime).Milliseconds())
-	}()
 	ndb.mtx.Lock()
 	defer ndb.mtx.Unlock()
 
