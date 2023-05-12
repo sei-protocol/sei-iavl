@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	dbm "github.com/tendermint/tm-db"
@@ -865,6 +866,10 @@ func (ndb *nodeDB) getFastIterator(start, end []byte, ascending bool) (dbm.Itera
 
 // Write to disk.
 func (ndb *nodeDB) Commit() error {
+	startTime := time.Now()
+	defer func() {
+		fmt.Printf("[Iavl-Debug] ndb Commit() took %d ms to write to disk", time.Since(startTime).Milliseconds())
+	}()
 	ndb.mtx.Lock()
 	defer ndb.mtx.Unlock()
 
