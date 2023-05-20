@@ -576,7 +576,6 @@ func (tree *MutableTree) LoadVersion(targetVersion int64) (toReturn int64, toErr
 	tree.mtx.Lock()
 	defer func() {
 		tree.mtx.Unlock()
-		fmt.Printf("Start upgrade \n")
 		if !tree.skipFastStorageUpgrade {
 			// Attempt to upgrade
 			if _, err := tree.enableFastStorageAndCommitIfNotEnabled(); err != nil {
@@ -584,7 +583,6 @@ func (tree *MutableTree) LoadVersion(targetVersion int64) (toReturn int64, toErr
 				toErr = err
 			}
 		}
-		fmt.Printf("End upgrade \n")
 	}()
 
 	var latestRoot []byte
@@ -593,13 +591,10 @@ func (tree *MutableTree) LoadVersion(targetVersion int64) (toReturn int64, toErr
 		if version > latestVersion && (targetVersion == 0 || version <= targetVersion) {
 			latestVersion = version
 			latestRoot = r
-			fmt.Printf("Latest version is %d \n", latestVersion)
 		}
 		if firstVersion == 0 || version < firstVersion {
 			firstVersion = version
-			fmt.Printf("First version is %d\n", firstVersion)
 		}
-		fmt.Printf("Current version is %d \n", version)
 	}
 
 	if !(targetVersion == 0 || latestVersion == targetVersion) {
@@ -618,14 +613,12 @@ func (tree *MutableTree) LoadVersion(targetVersion int64) (toReturn int64, toErr
 		skipFastStorageUpgrade: tree.skipFastStorageUpgrade,
 	}
 
-	fmt.Printf("Getting node for latest root %d \n", latestVersion)
 	if len(latestRoot) != 0 {
 		t.root, err = tree.ndb.GetNode(latestRoot)
 		if err != nil {
 			return 0, err
 		}
 	}
-	fmt.Printf("Found node for latest root %d \n", latestVersion)
 	tree.orphans = map[string]int64{}
 	tree.ImmutableTree = t
 	tree.lastSaved = t.clone()
