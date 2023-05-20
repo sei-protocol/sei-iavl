@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"os"
@@ -143,15 +144,18 @@ func PrintKeys(tree *iavl.MutableTree) {
 	count := 0
 	keyPrefixMap := map[string]int{}
 	tree.Iterate(func(key []byte, value []byte) bool {
-		//digest := sha256.Sum256(value)
+		printKey := parseWeaveKey(key)
+		digest := sha256.Sum256(value)
+		fmt.Printf(" %s\n %X\n", printKey, digest)
+
 		totalKeySize += len(key)
 		totalValSize += len(value)
 		count++
 		keyPrefixMap[fmt.Sprintf("%x", key[0])]++
-		if count%10000 == 0 {
-			fmt.Printf("key size %d, key prefix %x, value size %d\n", len(key), key[0], len(value))
-			fmt.Printf("Total key count %d, total key size %d, total value size %d\n", count, totalKeySize, totalValSize)
-		}
+		//if count%10000 == 0 {
+		//	fmt.Printf("key size %d, key prefix %x, value size %d\n", len(key), key[0], len(value))
+		//	fmt.Printf("Total key count %d, total key size %d, total value size %d\n", count, totalKeySize, totalValSize)
+		//}
 		return false
 	})
 	fmt.Printf("Final total key count %d, total key size %d, total value size %d, prefix map %v\n", count, totalKeySize, totalValSize, keyPrefixMap)
