@@ -576,6 +576,7 @@ func (tree *MutableTree) LoadVersion(targetVersion int64) (toReturn int64, toErr
 	tree.mtx.Lock()
 	defer func() {
 		tree.mtx.Unlock()
+		fmt.Printf("Start upgrade \n")
 		if !tree.skipFastStorageUpgrade {
 			// Attempt to upgrade
 			if _, err := tree.enableFastStorageAndCommitIfNotEnabled(); err != nil {
@@ -583,6 +584,7 @@ func (tree *MutableTree) LoadVersion(targetVersion int64) (toReturn int64, toErr
 				toErr = err
 			}
 		}
+		fmt.Printf("End upgrade \n")
 	}()
 
 	var latestRoot []byte
