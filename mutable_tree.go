@@ -616,13 +616,14 @@ func (tree *MutableTree) LoadVersion(targetVersion int64) (toReturn int64, toErr
 		skipFastStorageUpgrade: tree.skipFastStorageUpgrade,
 	}
 
+	fmt.Printf("Getting node for latest root %d \n", latestVersion)
 	if len(latestRoot) != 0 {
 		t.root, err = tree.ndb.GetNode(latestRoot)
 		if err != nil {
 			return 0, err
 		}
 	}
-
+	fmt.Printf("Found node for latest root %d \n", latestVersion)
 	tree.orphans = map[string]int64{}
 	tree.ImmutableTree = t
 	tree.lastSaved = t.clone()
