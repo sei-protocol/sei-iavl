@@ -591,12 +591,13 @@ func (tree *MutableTree) LoadVersion(targetVersion int64) (toReturn int64, toErr
 		if version > latestVersion && (targetVersion == 0 || version <= targetVersion) {
 			latestVersion = version
 			latestRoot = r
-			fmt.Printf("Latest version is %d, latest roots is %d \n", latestVersion, len(latestRoot))
+			fmt.Printf("Latest version is %d \n", latestVersion)
 		}
 		if firstVersion == 0 || version < firstVersion {
 			firstVersion = version
 			fmt.Printf("First version is %d\n", firstVersion)
 		}
+		fmt.Printf("Current version is %d \n", version)
 	}
 
 	if !(targetVersion == 0 || latestVersion == targetVersion) {
