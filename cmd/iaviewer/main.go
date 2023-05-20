@@ -45,6 +45,12 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Printf("Completed loading the tree\n")
+	hash, err1 := tree.Hash()
+	if err1 != nil {
+		fmt.Fprintf(os.Stderr, "Error hashing tree: %s\n", err1)
+		os.Exit(1)
+	}
+	fmt.Printf("Tree hash is %X, tree size is %X\n", hash, tree.Size())
 	switch args[0] {
 	case "data":
 		PrintKeys(tree)
@@ -124,6 +130,7 @@ func ReadTree(dir string, version int, prefix []byte) (*iavl.MutableTree, error)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("Opened DBd\n")
 	ver, err := tree.LoadVersion(int64(version))
 	fmt.Printf("Got version: %d\n", ver)
 	return tree, err

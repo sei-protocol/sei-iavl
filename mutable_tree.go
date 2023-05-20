@@ -554,6 +554,7 @@ func (tree *MutableTree) LazyLoadVersion(targetVersion int64) (toReturn int64, t
 // Returns the version number of the latest version found
 func (tree *MutableTree) LoadVersion(targetVersion int64) (toReturn int64, toErr error) {
 	roots, err := tree.ndb.getRoots()
+	fmt.Printf("Got roots of %d items \n", len(roots))
 	if err != nil {
 		return 0, err
 	}
