@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"os"
@@ -139,43 +137,41 @@ func ReadTree(dir string, version int, prefix []byte) (*iavl.MutableTree, error)
 
 func PrintKeys(tree *iavl.MutableTree) {
 	fmt.Println("Printing all keys with hashed values (to detect diff)")
-	totalKeySize := 0
-	totalValSize := 0
-	totalNumKeys := 0
-	keyPrefixMap := map[string]int{}
+	keyCount := map[string]int{}
 	tree.Iterate(func(key []byte, value []byte) bool {
 		printKey := parseWeaveKey(key)
-		digest := sha256.Sum256(value)
-		fmt.Printf("  %s\n    %X\n", printKey, digest)
-		totalKeySize += len(key)
-		totalValSize += len(value)
-		totalNumKeys++
-		keyPrefixMap[fmt.Sprintf("%x", key[0])]++
+		//digest := sha256.Sum256(value)
+		fmt.Printf("%s\n", printKey)
+		keyCount[printKey]++
 		return false
 	})
-	fmt.Printf("Total key count %d, total key bytes %d, total value bytes %d, prefix map %v\n", totalNumKeys, totalKeySize, totalValSize, keyPrefixMap)
+	for k, v := range keyCount {
+		fmt.Printf("%s: %d\n", k, v)
+	}
 }
 
 // parseWeaveKey assumes a separating : where all in front should be ascii,
 // and all afterwards may be ascii or binary
 func parseWeaveKey(key []byte) string {
-	cut := bytes.IndexRune(key, ':')
-	if cut == -1 {
-		return encodeID(key)
-	}
-	prefix := key[:cut]
-	id := key[cut+1:]
-	return fmt.Sprintf("%s:%s", encodeID(prefix), encodeID(id))
+	return encodeID(key)
+	//cut := bytes.IndexRune(key, ':')
+	//if cut == -1 {
+	//	return encodeID(key)
+	//}
+	//prefix := key[:cut]
+	//id := key[cut+1:]
+	//return fmt.Sprintf("%s:%s", encodeID(prefix), encodeID(id))
 }
 
 // casts to a string if it is printable ascii, hex-encodes otherwise
 func encodeID(id []byte) string {
-	for _, b := range id {
-		if b < 0x20 || b >= 0x80 {
-			return strings.ToUpper(hex.EncodeToString(id))
-		}
-	}
-	return string(id)
+	return strings.ToUpper(hex.EncodeToString(id))
+	//for _, b := range id {
+	//	if b < 0x20 || b >= 0x80 {
+	//		return strings.ToUpper(hex.EncodeToString(id))
+	//	}
+	//}
+	//return string(id)
 }
 
 func PrintShape(tree *iavl.MutableTree) {
