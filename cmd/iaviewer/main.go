@@ -165,13 +165,12 @@ func parseWeaveKey(key []byte) string {
 
 // casts to a string if it is printable ascii, hex-encodes otherwise
 func encodeID(id []byte) string {
-	return strings.ToUpper(hex.EncodeToString(id))
-	//for _, b := range id {
-	//	if b < 0x20 || b >= 0x80 {
-	//		return strings.ToUpper(hex.EncodeToString(id))
-	//	}
-	//}
-	//return string(id)
+	for _, b := range id {
+		if b < 0x20 || b >= 0x80 {
+			return strings.ToUpper(hex.EncodeToString(id))
+		}
+	}
+	return string(id)
 }
 
 func PrintShape(tree *iavl.MutableTree) {
