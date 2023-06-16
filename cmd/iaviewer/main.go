@@ -140,10 +140,13 @@ func PrintKeys(tree *iavl.MutableTree) {
 	keyCount := map[string]int{}
 	tree.Iterate(func(key []byte, value []byte) bool {
 		printKey := parseWeaveKey(key)
-		prefix := printKey[:66]
+		if len(printKey) > 66 {
+			prefix := printKey[:66]
+			keyCount[prefix]++
+		}
 		//digest := sha256.Sum256(value)
 		fmt.Printf("%s\n", printKey)
-		keyCount[prefix]++
+
 		return false
 	})
 	for k, v := range keyCount {
