@@ -545,6 +545,7 @@ func (ndb *nodeDB) DeleteVersionsRange(fromVersion, toVersion int64) error {
 
 	// If the predecessor is earlier than the beginning of the lifetime, we can delete the orphan.
 	// Otherwise, we shorten its lifetime, by moving its endpoint to the predecessor version.
+	fmt.Printf("[IAVL-DEBUG] Going to traverse from version %d to version %d\n", fromVersion, toVersion)
 	for version := fromVersion; version < toVersion; version++ {
 		err := ndb.traverseOrphansVersion(version, func(key, hash []byte) error {
 			var from, to int64
