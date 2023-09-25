@@ -64,10 +64,17 @@ func executeDumpChangesetCmd(cmd *cobra.Command, _ []string) error {
 		// Make sure we have a correct end version
 		if endVersion <= 0 {
 			latestVersion, _ := tree.LazyLoadVersion(0)
+			fmt.Printf("Got tree version: %d\n", latestVersion)
 			endVersion = latestVersion + 1
 		}
 
 		iavlTree := iavl.NewImmutableTree(dbm.NewPrefixDB(db, prefix), DefaultCacheSize, true)
+		treeHash, err := iavlTree.Hash()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error hashing tree: %s\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Tree hash is %X, tree size is %d\n", treeHash, tree.ImmutableTree().Size())
 		fmt.Printf("Going to traverse changeset from version %d to %d\n", startVersion, endVersion)
 		if err := iavlTree.TraverseStateChanges(startVersion, endVersion, func(version int64, changeSet *iavl.ChangeSet) error {
 			return WriteChangeSet(version, *changeSet)
