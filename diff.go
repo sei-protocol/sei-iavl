@@ -40,7 +40,7 @@ func (ndb *nodeDB) extractStateChanges(prevVersion int64, prevRoot []byte, root 
 		newLeaves []*Node
 	)
 
-	// consumeNewLeaves concumes remaining `newLeaves` nodes and produce insertion `KVPair`.
+	// consumeNewLeaves consumes remaining `newLeaves` nodes and produce insertion `KVPair`.
 	consumeNewLeaves := func() error {
 		for _, node := range newLeaves {
 			if err := receiver(&KVPair{

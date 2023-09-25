@@ -102,7 +102,7 @@ func OpenDB(dir string) (dbm.DB, error) {
 
 func WriteChangeSet(version int64, cs iavl.ChangeSet) error {
 	for _, pair := range cs.Pairs {
-		fmt.Printf("Version: %d, delete: %t, key: %X, value: %X\n", version, pair.Delete, pair.Key, pair.Key)
+		fmt.Printf("Version: %d, delete: %t, key: %X, value: %X\n", version, pair.Delete, pair.Key, pair.Value)
 	}
 	return nil
 }
