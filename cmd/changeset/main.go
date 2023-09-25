@@ -3,10 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/cosmos/iavl"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	dbm "github.com/tendermint/tm-db"
-	"math"
 	"os"
 	"strings"
 	"time"
@@ -22,7 +20,7 @@ func main() {
 		Use:   "changeset",
 		Short: "Dump change sets files which can be ingested into DB",
 	}
-	rootCmd.PersistentFlags().String("home-dir", "/root/.sei", "Home directory")
+	rootCmd.PersistentFlags().String("home-dir", "/root/.sei/data/application.db", "Home directory")
 	rootCmd.PersistentFlags().String("start-version", "0", "start version")
 	rootCmd.PersistentFlags().String("end-version", "0", "start version")
 	rootCmd.PersistentFlags().StringP("store", "s", DefaultStore, "store key name")
@@ -69,16 +67,9 @@ func executeDumpChangesetCmd(cmd *cobra.Command, _ []string) error {
 			endVersion = latestVersion + 1
 		}
 
-		storeStartVersion, err := getNextVersion(dbm.NewPrefixDB(db, prefix), 0)
-		if storeStartVersion <= 0 {
-			// store not exists
-			return errors.New("skip empty store")
-		}
-		if startVersion > storeStartVersion {
-			storeStartVersion = startVersion
-		}
 		iavlTree := iavl.NewImmutableTree(dbm.NewPrefixDB(db, prefix), DefaultCacheSize, true)
-		if err := iavlTree.TraverseStateChanges(storeStartVersion, endVersion, func(version int64, changeSet *iavl.ChangeSet) error {
+		fmt.Printf("Going to traverse changeset from version %d to %d\n", startVersion, endVersion)
+		if err := iavlTree.TraverseStateChanges(startVersion, endVersion, func(version int64, changeSet *iavl.ChangeSet) error {
 			return WriteChangeSet(version, *changeSet)
 		}); err != nil {
 			panic(err)
@@ -107,30 +98,6 @@ func OpenDB(dir string) (dbm.DB, error) {
 		return nil, err
 	}
 	return db, nil
-}
-
-func getNextVersion(db dbm.DB, version int64) (int64, error) {
-	rootKeyFormat := iavl.NewKeyFormat('r', 8)
-	itr, err := db.Iterator(
-		rootKeyFormat.Key(version+1),
-		rootKeyFormat.Key(math.MaxInt64),
-	)
-	if err != nil {
-		return 0, err
-	}
-	defer itr.Close()
-
-	var nversion int64
-	for ; itr.Valid(); itr.Next() {
-		rootKeyFormat.Scan(itr.Key(), &nversion)
-		return nversion, nil
-	}
-
-	if err := itr.Error(); err != nil {
-		return 0, err
-	}
-
-	return 0, nil
 }
 
 func WriteChangeSet(version int64, cs iavl.ChangeSet) error {
