@@ -54,7 +54,7 @@ func executeDumpChangesetCmd(cmd *cobra.Command, _ []string) error {
 		fmt.Println("Begin dumping store", storeKey, time.Now().Format(time.RFC3339))
 		db, err := OpenDB(homeDir)
 		if err != nil {
-			return nil
+			return err
 		}
 		if len(storeKey) != 0 {
 			db = dbm.NewPrefixDB(db, prefix)
