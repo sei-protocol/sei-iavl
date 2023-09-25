@@ -6,6 +6,7 @@ require (
 	github.com/confio/ics23/go v0.7.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/mock v1.6.0
+	github.com/klauspost/compress v1.15.1
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.5.0
 	github.com/stretchr/testify v1.8.1
