@@ -1065,12 +1065,10 @@ func (ndb *nodeDB) traverseNodes(fn func(hash []byte, node *Node) error) error {
 // endVersion is exclusive, set to `math.MaxInt64` to cover the latest version.
 func (ndb *nodeDB) traverseStateChanges(startVersion, endVersion int64, fn func(version int64, changeSet *ChangeSet) error) error {
 	predecessor, err := ndb.getPreviousVersion(startVersion)
-	fmt.Printf("predecessor:%v\n", predecessor)
 	if err != nil {
 		return err
 	}
 	prevRoot, err := ndb.getRoot(predecessor)
-	fmt.Printf("prevRoot:%v\n", prevRoot)
 	if err != nil {
 		return err
 	}
@@ -1084,7 +1082,6 @@ func (ndb *nodeDB) traverseStateChanges(startVersion, endVersion int64, fn func(
 			return nil
 		}
 
-		fmt.Printf("extractStateChanges:%v\n", version)
 		if err := ndb.extractStateChanges(predecessor, prevRoot, hash, receiveKVPair); err != nil {
 			return err
 		}
