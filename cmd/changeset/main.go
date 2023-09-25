@@ -54,10 +54,7 @@ func executeDumpChangesetCmd(cmd *cobra.Command, _ []string) error {
 		if err != nil {
 			return err
 		}
-		if len(storeKey) != 0 {
-			db = dbm.NewPrefixDB(db, prefix)
-		}
-		tree, err := iavl.NewMutableTree(db, DefaultCacheSize, true)
+		tree, err := iavl.NewMutableTree(dbm.NewPrefixDB(db, prefix), DefaultCacheSize, true)
 		if err != nil {
 			return err
 		}
