@@ -21,8 +21,8 @@ func main() {
 		Short: "Dump change sets files which can be ingested into DB",
 	}
 	rootCmd.PersistentFlags().String("home-dir", "/root/.sei/data/application.db", "Home directory")
-	rootCmd.PersistentFlags().String("start-version", "0", "start version")
-	rootCmd.PersistentFlags().String("end-version", "0", "start version")
+	rootCmd.PersistentFlags().Int64("start-version", 0, "start version")
+	rootCmd.PersistentFlags().Int64("end-version", 0, "start version")
 	rootCmd.PersistentFlags().StringP("store", "s", DefaultStore, "store key name")
 	rootCmd.AddCommand(DumpChangeSetCmd())
 	if err := rootCmd.Execute(); err != nil {
