@@ -26,7 +26,7 @@ func main() {
 		Use:   "changeset",
 		Short: "Dump change sets files which can be ingested into DB",
 	}
-	rootCmd.PersistentFlags().StringP("home-dir", "h", "/root/.sei/data/application.db", "Home directory")
+	rootCmd.PersistentFlags().StringP("db-dir", "d", "/root/.sei/data/application.db", "Home directory")
 	rootCmd.PersistentFlags().Int64("start-version", 0, "start version")
 	rootCmd.PersistentFlags().Int64("end-version", 0, "start version")
 	rootCmd.PersistentFlags().StringP("store", "s", DefaultStore, "store key name")
@@ -51,7 +51,7 @@ func DumpChangeSetCmd() *cobra.Command {
 }
 
 func executeDumpChangesetCmd(cmd *cobra.Command, _ []string) error {
-	homeDir, _ := cmd.Flags().GetString("home-dir")
+	homeDir, _ := cmd.Flags().GetString("db-dir")
 	storeKey, _ := cmd.Flags().GetString("store")
 	startVersion, _ := cmd.Flags().GetInt64("start-version")
 	endVersion, _ := cmd.Flags().GetInt64("end-version")
