@@ -22,7 +22,7 @@ type KVPairReceiver func(pair *KVPair) error
 //
 // The algorithm don't run in constant memory strictly, but it tried the best the only
 // keep minimal intermediate states in memory.
-func (ndb *nodeDB) ExtractStateChanges(prevVersion int64, prevRoot []byte, root []byte, receiver KVPairReceiver) error {
+func (ndb *nodeDB) extractStateChanges(prevVersion int64, prevRoot []byte, root []byte, receiver KVPairReceiver) error {
 	curIter, err := NewNodeIterator(root, ndb)
 	if err != nil {
 		return err
