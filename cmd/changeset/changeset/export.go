@@ -41,7 +41,6 @@ func NewCSExporter(db *dbm.PrefixDB, start int64, end int64, concurrency int, se
 }
 
 func (exporter *CSExporter) Export() error {
-	fmt.Printf("Exporting changeset with %v \n", exporter)
 	// use a worker pool with enough buffer to parallelize the export
 	pool := pond.New(exporter.concurrency, 1024)
 	defer pool.StopAndWait()
@@ -66,7 +65,9 @@ func (exporter *CSExporter) Export() error {
 		group.Submit(func() error {
 			tree := iavlTreePool.Get().(*iavl.ImmutableTree)
 			defer iavlTreePool.Put(tree)
-			return dumpChangesetSegment(exporter.outputDir, tree, SegmentRange{i, end})
+			err := dumpChangesetSegment(exporter.outputDir, tree, SegmentRange{i, end})
+			fmt.Printf("Finished exporting segment %d-%d\n", i, end)
+			return err
 		})
 		groups = append(groups, group)
 	}
@@ -105,7 +106,7 @@ func dumpChangesetSegment(outputDir string, tree *iavl.ImmutableTree, segment Se
 	if err := tree.TraverseStateChanges(segment.start, segment.end, func(version int64, changeSet *iavl.ChangeSet) error {
 		return WriteChangeSet(zstdWriter, version, *changeSet)
 	}); err != nil {
-		panic(err)
+		return err
 	}
 
 	return zstdWriter.Flush()
@@ -123,7 +124,7 @@ func WriteChangeSet(writer io.Writer, version int64, cs iavl.ChangeSet) error {
 	var size int
 	items := make([][]byte, 0, len(cs.Pairs))
 	for _, pair := range cs.Pairs {
-		fmt.Printf("Version: %d, delete: %t, key: %X, value: %X\n", version, pair.Delete, pair.Key, pair.Value)
+		//fmt.Printf("Version: %d, delete: %t, key: %X, value: %X\n", version, pair.Delete, pair.Key, pair.Value)
 		buf, err := encodeKVPair(pair)
 		if err != nil {
 			return err
