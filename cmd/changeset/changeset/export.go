@@ -65,7 +65,7 @@ func (exporter *CSExporter) Export() error {
 
 		group, _ := pool.GroupContext(context.Background())
 		// split each segment according to number of workers
-		for _, workRange := range splitIntoSegments(exporter.concurrency, i, end) {
+		for _, workRange := range splitIntoSegments(exporter.segmentSize, i, end) {
 			segmentRange := workRange
 			// each task group will export a segment file
 			group.Submit(func() error {
@@ -92,9 +92,8 @@ type SegmentRange struct {
 	end   int64
 }
 
-func splitIntoSegments(numWorkers int, start int64, end int64) []SegmentRange {
+func splitIntoSegments(segmentSize int64, start int64, end int64) []SegmentRange {
 	var segments []SegmentRange
-	segmentSize := (end - start) / int64(numWorkers)
 	for i := start; i < end; i += segmentSize {
 		rangeEnd := i + segmentSize
 		if rangeEnd > end {
