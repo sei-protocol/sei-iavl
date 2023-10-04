@@ -75,6 +75,7 @@ func (exporter *CSExporter) Export() error {
 	// wait for all task groups to complete
 	for _, group := range groups {
 		if err := group.Wait(); err != nil {
+			fmt.Printf("Error: %v\n", err)
 			return err
 		}
 	}
