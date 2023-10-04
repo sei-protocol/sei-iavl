@@ -2,6 +2,7 @@ package iavl
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/cosmos/iavl/proto"
 )
@@ -21,16 +22,18 @@ type KVPairReceiver func(pair *KVPair) error
 //
 // The algorithm don't run in constant memory strictly, but it tried the best the only
 // keep minimal intermediate states in memory.
-func (ndb *nodeDB) extractStateChanges(prevVersion int64, prevRoot []byte, root []byte, receiver KVPairReceiver) error {
+func (ndb *nodeDB) EextractStateChanges(prevVersion int64, prevRoot []byte, root []byte, receiver KVPairReceiver) error {
 	curIter, err := NewNodeIterator(root, ndb)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("curIter %d\n", prevVersion)
 
 	prevIter, err := NewNodeIterator(prevRoot, ndb)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("prevIter \n")
 
 	var (
 		// current shared node between two versions
@@ -78,9 +81,12 @@ func (ndb *nodeDB) extractStateChanges(prevVersion int64, prevRoot []byte, root 
 
 		return nil
 	}
+
 	if err := advanceSharedNode(); err != nil {
 		return err
 	}
+
+	fmt.Printf("after advanceSharedNode\n")
 
 	// addOrphanedLeave receives a new orphaned leave node found in previous version,
 	// compare with the current newLeaves, to produce `iavl.KVPair` stream.
@@ -140,10 +146,13 @@ func (ndb *nodeDB) extractStateChanges(prevVersion int64, prevRoot []byte, root 
 			}
 		}
 	}
+	fmt.Printf("before consumeNewLeaves \n")
 
 	if err := consumeNewLeaves(); err != nil {
 		return err
 	}
+
+	fmt.Printf("after consumeNewLeaves \n")
 
 	if err := curIter.Error(); err != nil {
 		return err
