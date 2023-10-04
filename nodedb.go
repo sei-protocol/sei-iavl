@@ -1084,10 +1084,12 @@ func (ndb *nodeDB) traverseStateChanges(startVersion, endVersion int64, fn func(
 			return nil
 		}
 
+		fmt.Printf("extractStateChanges version: %d\n", version)
 		if err := ndb.extractStateChanges(predecessor, prevRoot, hash, receiveKVPair); err != nil {
 			return err
 		}
 
+		fmt.Printf("applying fn for version: %d\n", version)
 		if err := fn(version, &changeSet); err != nil {
 			return err
 		}
