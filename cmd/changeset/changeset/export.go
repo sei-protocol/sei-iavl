@@ -62,11 +62,13 @@ func (exporter *CSExporter) Export() error {
 			end = exporter.end
 		}
 		group, _ := pool.GroupContext(context.Background())
+		startPos := i
+		endPos := end
 		group.Submit(func() error {
 			tree := iavlTreePool.Get().(*iavl.ImmutableTree)
 			defer iavlTreePool.Put(tree)
-			err := dumpChangesetSegment(exporter.outputDir, tree, SegmentRange{i, end})
-			fmt.Printf("Finished exporting segment %d-%d\n", i, end)
+			err := dumpChangesetSegment(exporter.outputDir, tree, startPos, endPos)
+			fmt.Printf("Finished exporting segment %d-%d\n", startPos, endPos)
 			return err
 		})
 		groups = append(groups, group)
@@ -82,14 +84,9 @@ func (exporter *CSExporter) Export() error {
 	return nil
 }
 
-type SegmentRange struct {
-	start int64
-	end   int64
-}
-
-func dumpChangesetSegment(outputDir string, tree *iavl.ImmutableTree, segment SegmentRange) (returnErr error) {
-	fmt.Printf("Exporting changeset segment %d-%d\n", segment.start, segment.end)
-	segmentFilePath := filepath.Join(outputDir, fmt.Sprintf("changeset-%d-%d.zst", segment.start, segment.end))
+func dumpChangesetSegment(outputDir string, tree *iavl.ImmutableTree, start int64, end int64) (returnErr error) {
+	fmt.Printf("Exporting changeset segment %d-%d\n", start, end)
+	segmentFilePath := filepath.Join(outputDir, fmt.Sprintf("changeset-%d-%d.zst", start, end))
 	segmentFile, err := createFile(segmentFilePath)
 	if err != nil {
 		return err
@@ -104,7 +101,7 @@ func dumpChangesetSegment(outputDir string, tree *iavl.ImmutableTree, segment Se
 	if err != nil {
 		return err
 	}
-	if err := tree.TraverseStateChanges(segment.start, segment.end, func(version int64, changeSet *iavl.ChangeSet) error {
+	if err := tree.TraverseStateChanges(start, end, func(version int64, changeSet *iavl.ChangeSet) error {
 		return WriteChangeSet(zstdWriter, version, *changeSet)
 	}); err != nil {
 		return err
