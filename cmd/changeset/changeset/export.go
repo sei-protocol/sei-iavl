@@ -25,11 +25,11 @@ type CSExporter struct {
 	start       int64
 	end         int64
 	concurrency int
-	segmentSize int
+	segmentSize int64
 	outputDir   string
 }
 
-func NewCSExporter(db *dbm.PrefixDB, start int64, end int64, concurrency int, segmentSize int, outputDir string) *CSExporter {
+func NewCSExporter(db *dbm.PrefixDB, start int64, end int64, concurrency int, segmentSize int64, outputDir string) *CSExporter {
 	return &CSExporter{
 		db:          db,
 		start:       start,
