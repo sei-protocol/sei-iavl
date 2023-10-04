@@ -65,10 +65,12 @@ func (ndb *nodeDB) extractStateChanges(prevVersion int64, prevRoot []byte, root 
 		if err := consumeNewLeaves(); err != nil {
 			return err
 		}
+		fmt.Printf("after consumeNewLeaves\n")
 
 		sharedNode = nil
 		for curIter.Valid() {
 			node := curIter.GetNode()
+			fmt.Printf("curIter is valid %d\n", node.version)
 			shared := node.version <= prevVersion
 			curIter.Next(shared)
 			if shared {
