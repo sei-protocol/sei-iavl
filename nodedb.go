@@ -1076,6 +1076,7 @@ func (ndb *nodeDB) traverseStateChanges(startVersion, endVersion int64, fn func(
 		var version int64
 		rootKeyFormat.Scan(k, &version)
 
+		fmt.Printf("traversed version: %d\n", version)
 		var changeSet ChangeSet
 		receiveKVPair := func(pair *KVPair) error {
 			changeSet.Pairs = append(changeSet.Pairs, pair)
