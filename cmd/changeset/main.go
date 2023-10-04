@@ -37,7 +37,7 @@ func ExportChangeSetCmd() *cobra.Command {
 	}
 	cmd.PersistentFlags().Int64("start-version", 0, "start version number")
 	cmd.PersistentFlags().Int64("end-version", 0, "end version number")
-	cmd.PersistentFlags().Int64("concurrency", 10, "number of concurrent workers")
+	cmd.PersistentFlags().Int("concurrency", 10, "number of concurrent workers")
 	cmd.PersistentFlags().Int64("segment-size", 1000000, "number of blocks in each segment")
 
 	// we handle one stores at a time, because stores don't share much in db, handle concurrently reduces cache efficiency.
