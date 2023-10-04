@@ -764,7 +764,6 @@ func (ndb *nodeDB) getPreviousVersion(version int64) (int64, error) {
 		rootKeyFormat.Scan(k, &pversion)
 		return pversion, nil
 	}
-
 	if err := itr.Error(); err != nil {
 		return 0, err
 	}

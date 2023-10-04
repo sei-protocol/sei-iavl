@@ -69,7 +69,7 @@ func (ndb *nodeDB) extractStateChanges(prevVersion int64, prevRoot []byte, root 
 		for curIter.Valid() {
 			node := curIter.GetNode()
 			shared := node.version <= prevVersion
-			fmt.Printf("curIter is valid with version %d and prevVersion %d\n", node.version, prevVersion)
+			fmt.Printf("curIter version %d has %d nodesToVisit \n", node.version, len(curIter.nodesToVisit))
 			curIter.Next(shared)
 			if shared {
 				sharedNode = node
