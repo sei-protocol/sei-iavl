@@ -50,7 +50,7 @@ func exportChangeset(cmd *cobra.Command, _ []string) error {
 	startVersion, _ := cmd.Flags().GetInt64("start-version")
 	endVersion, _ := cmd.Flags().GetInt64("end-version")
 	concurrency, _ := cmd.Flags().GetInt("concurrency")
-	segmentSize, _ := cmd.Flags().GetInt("segment-size")
+	segmentSize, _ := cmd.Flags().GetInt64("segment-size")
 	outDir, _ := cmd.Flags().GetString("output-dir")
 
 	if storeKeys == "" {
