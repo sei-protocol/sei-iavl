@@ -50,6 +50,7 @@ func exportChangeset(cmd *cobra.Command, _ []string) error {
 	startVersion, _ := cmd.Flags().GetInt64("start-version")
 	endVersion, _ := cmd.Flags().GetInt64("end-version")
 	concurrency, _ := cmd.Flags().GetInt("concurrency")
+	segmentSize, _ := cmd.Flags().GetInt("segment-size")
 	outDir, _ := cmd.Flags().GetString("output-dir")
 
 	if storeKeys == "" {
@@ -58,7 +59,7 @@ func exportChangeset(cmd *cobra.Command, _ []string) error {
 	storeKeysList := strings.Split(storeKeys, ",")
 	for _, storeKey := range storeKeysList {
 		prefix := []byte(fmt.Sprintf("s/k:%s/", storeKey))
-		fmt.Printf("Begin exporting store with prefix %s, ", prefix, time.Now().Format(time.RFC3339))
+		fmt.Printf("Begin exporting store with prefix %s at %s", prefix, time.Now().Format(time.RFC3339))
 		if err := os.MkdirAll(outDir, os.ModePerm); err != nil {
 			return err
 		}
@@ -72,7 +73,7 @@ func exportChangeset(cmd *cobra.Command, _ []string) error {
 			return err
 		}
 		prefixDB := dbm.NewPrefixDB(db, prefix)
-		exporter := changeset.NewCSExporter(prefixDB, startVersion, endVersion, concurrency, storeDir)
+		exporter := changeset.NewCSExporter(prefixDB, startVersion, endVersion, concurrency, segmentSize, storeDir)
 		err = exporter.Export()
 		if err != nil {
 			return err
