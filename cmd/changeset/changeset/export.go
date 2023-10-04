@@ -41,7 +41,7 @@ func NewCSExporter(db *dbm.PrefixDB, start int64, end int64, concurrency int, se
 }
 
 func (exporter *CSExporter) Export() error {
-
+	fmt.Printf("Exporting changeset with %v \n", exporter)
 	// use a worker pool with enough buffer to parallelize the export
 	pool := pond.New(exporter.concurrency, 1024)
 	defer pool.StopAndWait()
@@ -100,12 +100,13 @@ func splitIntoSegments(numWorkers int, start int64, end int64) []SegmentRange {
 		if rangeEnd > end {
 			rangeEnd = end
 		}
-		segments = append(segments, SegmentRange{start, end})
+		segments = append(segments, SegmentRange{i, rangeEnd})
 	}
 	return segments
 }
 
 func dumpChangesetSegment(outputDir string, tree *iavl.ImmutableTree, segment SegmentRange) (returnErr error) {
+	fmt.Printf("Exporting changeset segment %d-%d\n", segment.start, segment.end)
 	segmentFilePath := filepath.Join(outputDir, fmt.Sprintf("changeset-%d-%d.zst", segment.start, segment.end))
 	segmentFile, err := createFile(segmentFilePath)
 	if err != nil {

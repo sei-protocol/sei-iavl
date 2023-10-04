@@ -59,7 +59,7 @@ func exportChangeset(cmd *cobra.Command, _ []string) error {
 	storeKeysList := strings.Split(storeKeys, ",")
 	for _, storeKey := range storeKeysList {
 		prefix := []byte(fmt.Sprintf("s/k:%s/", storeKey))
-		fmt.Printf("Begin exporting store with prefix %s at %s", prefix, time.Now().Format(time.RFC3339))
+		fmt.Printf("Begin exporting store with prefix %s at %s\n", prefix, time.Now().Format(time.RFC3339))
 		if err := os.MkdirAll(outDir, os.ModePerm); err != nil {
 			return err
 		}
