@@ -81,6 +81,7 @@ func (ndb *nodeDB) extractStateChanges(prevVersion int64, prevRoot []byte, root 
 
 		return nil
 	}
+	fmt.Printf("before advanceSharedNode\n")
 
 	if err := advanceSharedNode(); err != nil {
 		return err
