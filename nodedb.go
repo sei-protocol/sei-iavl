@@ -1072,7 +1072,7 @@ func (ndb *nodeDB) traverseStateChanges(startVersion, endVersion int64, fn func(
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Traversing range from %d to %d\n", startVersion, endVersion)
+	fmt.Printf("Traversing range from %d to %d with predecessor %d\n", startVersion, endVersion, predecessor)
 	return ndb.traverseRange(rootKeyFormat.Key(startVersion), rootKeyFormat.Key(endVersion), func(k, hash []byte) error {
 		var version int64
 		rootKeyFormat.Scan(k, &version)
