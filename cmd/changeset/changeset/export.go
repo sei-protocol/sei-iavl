@@ -57,24 +57,17 @@ func (exporter *CSExporter) Export() error {
 	// split into segments
 	var segmentSize = exporter.segmentSize
 	var groups []*pond.TaskGroupWithContext
-	for i := exporter.start; i < exporter.end; i += int64(segmentSize) {
-		end := i + int64(segmentSize)
+	for i := exporter.start; i < exporter.end; i += segmentSize {
+		end := i + segmentSize
 		if end > exporter.end {
 			end = exporter.end
 		}
-
 		group, _ := pool.GroupContext(context.Background())
-		// split each segment according to number of workers
-		for _, workRange := range splitIntoSegments(exporter.segmentSize, i, end) {
-			segmentRange := workRange
-			// each task group will export a segment file
-			group.Submit(func() error {
-				tree := iavlTreePool.Get().(*iavl.ImmutableTree)
-				defer iavlTreePool.Put(tree)
-				return dumpChangesetSegment(exporter.outputDir, tree, segmentRange)
-			})
-		}
-
+		group.Submit(func() error {
+			tree := iavlTreePool.Get().(*iavl.ImmutableTree)
+			defer iavlTreePool.Put(tree)
+			return dumpChangesetSegment(exporter.outputDir, tree, SegmentRange{i, end})
+		})
 		groups = append(groups, group)
 	}
 
@@ -90,18 +83,6 @@ func (exporter *CSExporter) Export() error {
 type SegmentRange struct {
 	start int64
 	end   int64
-}
-
-func splitIntoSegments(segmentSize int64, start int64, end int64) []SegmentRange {
-	var segments []SegmentRange
-	for i := start; i < end; i += segmentSize {
-		rangeEnd := i + segmentSize
-		if rangeEnd > end {
-			rangeEnd = end
-		}
-		segments = append(segments, SegmentRange{i, rangeEnd})
-	}
-	return segments
 }
 
 func dumpChangesetSegment(outputDir string, tree *iavl.ImmutableTree, segment SegmentRange) (returnErr error) {
