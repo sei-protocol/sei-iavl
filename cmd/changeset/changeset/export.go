@@ -88,22 +88,31 @@ func dumpChangesetSegment(outputDir string, tree *iavl.ImmutableTree, start int6
 	fmt.Printf("Exporting changeset segment %d-%d\n", start, end)
 	segmentFilePath := filepath.Join(outputDir, fmt.Sprintf("changeset-%d-%d.zst", start, end))
 	segmentFile, err := createFile(segmentFilePath)
+	zstdWriter, err := zstd.NewWriter(segmentFile)
+
 	if err != nil {
+		fmt.Printf("Error: %v\n", err)
 		return err
 	}
+
 	defer func() {
+		err := zstdWriter.Close()
+		if err != nil {
+			returnErr = err
+		}
 		if err := segmentFile.Close(); returnErr == nil {
 			returnErr = err
 		}
 	}()
 
-	zstdWriter, err := zstd.NewWriter(segmentFile)
 	if err != nil {
+		fmt.Printf("Error: %v\n", err)
 		return err
 	}
 	if err := tree.TraverseStateChanges(start, end, func(version int64, changeSet *iavl.ChangeSet) error {
 		return WriteChangeSet(zstdWriter, version, *changeSet)
 	}); err != nil {
+		fmt.Printf("Error: %v\n", err)
 		return err
 	}
 
@@ -115,6 +124,7 @@ func createFile(name string) (*os.File, error) {
 }
 
 func WriteChangeSet(writer io.Writer, version int64, cs iavl.ChangeSet) error {
+	fmt.Printf("Writing version: %d\n", version)
 	if len(cs.Pairs) <= 0 {
 		return nil
 	}
@@ -125,6 +135,7 @@ func WriteChangeSet(writer io.Writer, version int64, cs iavl.ChangeSet) error {
 		//fmt.Printf("Version: %d, delete: %t, key: %X, value: %X\n", version, pair.Delete, pair.Key, pair.Value)
 		buf, err := encodeKVPair(pair)
 		if err != nil {
+			fmt.Printf("Error: %v\n", err)
 			return err
 		}
 		size += len(buf)
@@ -137,10 +148,12 @@ func WriteChangeSet(writer io.Writer, version int64, cs iavl.ChangeSet) error {
 	binary.LittleEndian.PutUint64(versionHeader[8:], uint64(size))
 
 	if _, err := writer.Write(versionHeader[:]); err != nil {
+		fmt.Printf("Error: %v\n", err)
 		return err
 	}
 	for _, item := range items {
 		if _, err := writer.Write(item); err != nil {
+			fmt.Printf("Error: %v\n", err)
 			return err
 		}
 	}
