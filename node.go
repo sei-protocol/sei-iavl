@@ -473,7 +473,7 @@ func (node *Node) validate() error {
 	return nil
 }
 
-// Writes the node's hash to the given io.Writer. This function expects
+// Writes the node's hash to the given changeset.Writer. This function expects
 // child hashes to be already set.
 func (node *Node) writeHashBytes(w io.Writer) error {
 	err := encoding.EncodeVarint(w, int64(node.GetHeight()))
@@ -522,7 +522,7 @@ func (node *Node) writeHashBytes(w io.Writer) error {
 	return nil
 }
 
-// Writes the node's hash to the given io.Writer.
+// Writes the node's hash to the given changeset.Writer.
 // This function has the side-effect of calling hashWithCount.
 func (node *Node) writeHashBytesRecursively(w io.Writer) (hashCount int64, err error) {
 	if node.GetLeftNode() != nil {
@@ -560,7 +560,7 @@ func (node *Node) encodedSize() int {
 	return n
 }
 
-// Writes the node as a serialized byte slice to the supplied io.Writer.
+// Writes the node as a serialized byte slice to the supplied changeset.Writer.
 func (node *Node) writeBytes(w io.Writer) error {
 	if node == nil {
 		return errors.New("cannot write nil node")

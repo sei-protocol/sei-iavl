@@ -32,7 +32,7 @@ Size is the number of leaves under a given node. With a full subtree, `node.size
 Every node is persisted by encoding the key, version, height, size and hash. If the node is a leaf node, then the value is persisted as well. If the node is not a leaf node, then the leftHash and rightHash are persisted as well.
 
 ```golang
-// Writes the node as a serialized byte slice to the supplied io.Writer.
+// Writes the node as a serialized byte slice to the supplied changeset.Writer.
 func (node *Node) writeBytes(w io.Writer) error {
 	cause := encodeVarint(w, node.height)
 	if cause != nil {
@@ -84,7 +84,7 @@ func (node *Node) writeBytes(w io.Writer) error {
 A node's hash is calculated by hashing the height, size, and version of the node. If the node is a leaf node, then the key and value are also hashed. If the node is an inner node, the leftHash and rightHash are included in hash but the key is not.
 
 ```golang
-// Writes the node's hash to the given io.Writer. This function expects
+// Writes the node's hash to the given changeset.Writer. This function expects
 // child hashes to be already set.
 func (node *Node) writeHashBytes(w io.Writer) error {
 	err := encodeVarint(w, node.height)
