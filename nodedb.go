@@ -812,7 +812,6 @@ func (ndb *nodeDB) traverse(fn func(key, value []byte) error) error {
 // Traverse all keys between a given range (excluding end) and return error if any, nil otherwise
 func (ndb *nodeDB) traverseRange(start []byte, end []byte, fn func(k, v []byte) error) error {
 	itr, err := ndb.db.Iterator(start, end)
-	fmt.Printf("itr range from %s to %s\n", string(start), string(end))
 	if err != nil {
 		return err
 	}
@@ -1073,6 +1072,7 @@ func (ndb *nodeDB) traverseStateChanges(startVersion, endVersion int64, fn func(
 	if err != nil {
 		return err
 	}
+	fmt.Printf("Traversing range from %d to %d\n", startVersion, endVersion)
 	return ndb.traverseRange(rootKeyFormat.Key(startVersion), rootKeyFormat.Key(endVersion), func(k, hash []byte) error {
 		var version int64
 		rootKeyFormat.Scan(k, &version)
