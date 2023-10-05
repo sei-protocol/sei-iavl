@@ -2,8 +2,6 @@ package iavl
 
 import (
 	"bytes"
-	"fmt"
-
 	"github.com/cosmos/iavl/proto"
 )
 
@@ -142,14 +140,10 @@ func (ndb *nodeDB) extractStateChanges(prevVersion int64, prevRoot []byte, root 
 			}
 		}
 	}
-	fmt.Printf("before consumeNewLeaves \n")
 
 	if err := consumeNewLeaves(); err != nil {
 		return err
 	}
-
-	fmt.Printf("after consumeNewLeaves \n")
-
 	if err := curIter.Error(); err != nil {
 		return err
 	}
