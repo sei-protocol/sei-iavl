@@ -27,7 +27,6 @@ func (ndb *nodeDB) extractStateChanges(prevVersion int64, prevRoot []byte, root 
 	if err != nil {
 		return err
 	}
-	fmt.Printf("curIter %d\n", prevVersion)
 
 	prevIter, err := NewNodeIterator(prevRoot, ndb)
 	if err != nil {
@@ -69,7 +68,6 @@ func (ndb *nodeDB) extractStateChanges(prevVersion int64, prevRoot []byte, root 
 		for curIter.Valid() {
 			node := curIter.GetNode()
 			shared := node.version <= prevVersion
-			fmt.Printf("curIter version %d has %d nodesToVisit \n", node.version, len(curIter.nodesToVisit))
 			curIter.Next(shared)
 			if shared {
 				sharedNode = node
@@ -81,13 +79,10 @@ func (ndb *nodeDB) extractStateChanges(prevVersion int64, prevRoot []byte, root 
 
 		return nil
 	}
-	fmt.Printf("before advanceSharedNode\n")
 
 	if err := advanceSharedNode(); err != nil {
 		return err
 	}
-
-	fmt.Printf("after advanceSharedNode\n")
 
 	// addOrphanedLeave receives a new orphaned leave node found in previous version,
 	// compare with the current newLeaves, to produce `iavl.KVPair` stream.

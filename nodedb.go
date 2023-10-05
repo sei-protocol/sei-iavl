@@ -1060,7 +1060,7 @@ func (ndb *nodeDB) traverseNodes(fn func(hash []byte, node *Node) error) error {
 	return nil
 }
 
-// traverseStateChanges iterate the range of versions, compare each version to it's predecessor to extract the state changes of it.
+// traverseStateChanges iterate the range of versions, compare each version to its predecessor to extract the state changes of it.
 // endVersion is exclusive, set to `math.MaxInt64` to cover the latest version.
 func (ndb *nodeDB) traverseStateChanges(startVersion, endVersion int64, fn func(version int64, changeSet *ChangeSet) error) error {
 	predecessor, err := ndb.getPreviousVersion(startVersion)
@@ -1071,24 +1071,20 @@ func (ndb *nodeDB) traverseStateChanges(startVersion, endVersion int64, fn func(
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Traversing range from %d to %d with predecessor %d\n", startVersion, endVersion, predecessor)
 	return ndb.traverseRange(rootKeyFormat.Key(startVersion), rootKeyFormat.Key(endVersion), func(k, hash []byte) error {
 		var version int64
 		rootKeyFormat.Scan(k, &version)
 
-		fmt.Printf("traversed version: %d\n", version)
 		var changeSet ChangeSet
 		receiveKVPair := func(pair *KVPair) error {
 			changeSet.Pairs = append(changeSet.Pairs, pair)
 			return nil
 		}
 
-		fmt.Printf("extractStateChanges version: %d\n", version)
 		if err := ndb.extractStateChanges(predecessor, prevRoot, hash, receiveKVPair); err != nil {
 			return err
 		}
 
-		fmt.Printf("applying fn for version: %d\n", version)
 		if err := fn(version, &changeSet); err != nil {
 			return err
 		}
