@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	DefaultCacheSize int = 100000
+	DefaultCacheSize int = 1000000
 )
 
 type CSExporter struct {
@@ -124,7 +124,6 @@ func createFile(name string) (*os.File, error) {
 }
 
 func WriteChangeSet(writer io.Writer, version int64, cs iavl.ChangeSet) error {
-	fmt.Printf("Writing version: %d\n", version)
 	if len(cs.Pairs) <= 0 {
 		return nil
 	}

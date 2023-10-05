@@ -57,6 +57,7 @@ func exportChangeset(cmd *cobra.Command, _ []string) error {
 		return errors.New("stores is required")
 	}
 	storeKeysList := strings.Split(storeKeys, ",")
+	db, err := OpenDB(inputDir)
 	for _, storeKey := range storeKeysList {
 		prefix := []byte(fmt.Sprintf("s/k:%s/", storeKey))
 		fmt.Printf("Begin exporting store with prefix %s at %s\n", prefix, time.Now().Format(time.RFC3339))
@@ -67,8 +68,6 @@ func exportChangeset(cmd *cobra.Command, _ []string) error {
 		if err := os.MkdirAll(storeDir, os.ModePerm); err != nil {
 			return err
 		}
-
-		db, err := OpenDB(inputDir)
 		if err != nil {
 			return err
 		}
