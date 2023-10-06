@@ -16,7 +16,7 @@ func PrintChangeSetCmd() *cobra.Command {
 	cmd.PersistentFlags().StringP("input-file", "f", "", "Full file path of the changeset file")
 	err := cmd.MarkFlagRequired("input-file")
 	if err != nil {
-		return err
+		panic(err)
 	}
 	return cmd
 }
