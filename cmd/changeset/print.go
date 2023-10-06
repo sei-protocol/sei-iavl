@@ -14,10 +14,6 @@ func PrintChangeSetCmd() *cobra.Command {
 		RunE:  handlePrintChangeset,
 	}
 	cmd.PersistentFlags().StringP("input-file", "f", "", "Full file path of the changeset file")
-	err := cmd.MarkFlagRequired("input-file")
-	if err != nil {
-		panic(err)
-	}
 	return cmd
 }
 
