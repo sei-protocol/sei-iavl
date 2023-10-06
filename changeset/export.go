@@ -20,7 +20,7 @@ const (
 	DefaultCacheSize int = 1000000
 )
 
-type CSExporter struct {
+type Exporter struct {
 	db          *dbm.PrefixDB
 	start       int64
 	end         int64
@@ -29,8 +29,15 @@ type CSExporter struct {
 	outputDir   string
 }
 
-func NewCSExporter(db *dbm.PrefixDB, start int64, end int64, concurrency int, segmentSize int64, outputDir string) *CSExporter {
-	return &CSExporter{
+func NewExporter(
+	db *dbm.PrefixDB,
+	start int64,
+	end int64,
+	concurrency int,
+	segmentSize int64,
+	outputDir string,
+) *Exporter {
+	return &Exporter{
 		db:          db,
 		start:       start,
 		end:         end,
@@ -40,7 +47,7 @@ func NewCSExporter(db *dbm.PrefixDB, start int64, end int64, concurrency int, se
 	}
 }
 
-func (exporter *CSExporter) Export() error {
+func (exporter *Exporter) Start() error {
 	// use a worker pool with enough buffer to parallelize the export
 	pool := pond.New(exporter.concurrency, 1024)
 	defer pool.StopAndWait()
