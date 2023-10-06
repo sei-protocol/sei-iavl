@@ -1,7 +1,6 @@
 package changeset
 
 import (
-	"errors"
 	"io"
 )
 
@@ -22,10 +21,19 @@ func (r *WrapReader) ReadByte() (byte, error) {
 func (r *WrapReader) Close() error {
 	var errs []error
 	if closer, ok := r.readerCloser.(io.Closer); ok {
-		errs = append(errs, closer.Close())
+		err := closer.Close()
+		if err != nil {
+			errs = append(errs, err)
+		}
 	}
 	if r.closer != nil {
-		errs = append(errs, r.closer.Close())
+		err := r.closer.Close()
+		if err != nil {
+			errs = append(errs, err)
+		}
 	}
-	return errors.Join(errs...)
+	if len(errs) > 0 {
+		return errs[0]
+	}
+	return nil
 }
