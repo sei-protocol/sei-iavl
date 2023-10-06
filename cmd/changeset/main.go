@@ -16,7 +16,7 @@ func main() {
 	rootCmd.PersistentFlags().StringP("output-dir", "o", "changeset-output", "output directory")
 
 	rootCmd.AddCommand(ExportChangeSetCmd())
-	rootCmd.AddCommand()
+	rootCmd.AddCommand(PrintChangeSetCmd())
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
