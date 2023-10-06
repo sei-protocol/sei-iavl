@@ -114,11 +114,13 @@ func readKVPair(reader Reader) (*iavl.KVPair, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("deletion: %d\n", deletion)
 
 	keyLen, err := binary.ReadUvarint(reader)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("keyLen: %d\n", keyLen)
 
 	pair := iavl.KVPair{
 		Delete: deletion == 1,

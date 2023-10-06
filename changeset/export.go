@@ -138,7 +138,6 @@ func WriteChangeSet(writer io.Writer, version int64, cs iavl.ChangeSet) error {
 	var size int
 	items := make([][]byte, 0, len(cs.Pairs))
 	for _, pair := range cs.Pairs {
-		//fmt.Printf("Version: %d, delete: %t, key: %X, value: %X\n", version, pair.Delete, pair.Key, pair.Value)
 		buf, err := encodeKVPair(pair)
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
