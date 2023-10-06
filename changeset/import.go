@@ -99,6 +99,7 @@ func readNextChangeset(reader Reader) (int64, int64, *iavl.ChangeSet, error) {
 			return 0, 0, nil, err
 		}
 		offset += int64(encodedSizeOfKVPair(pair))
+		fmt.Printf("offset: %d\n", offset)
 		changeset.Pairs = append(changeset.Pairs, pair)
 	}
 	if offset != size {
@@ -138,6 +139,9 @@ func readKVPair(reader Reader) (*iavl.KVPair, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Printf("valueLen: %d\n", valueLen)
+
 	pair.Value = make([]byte, valueLen)
 	if _, err := io.ReadFull(reader, pair.Value); err != nil {
 		return nil, err
