@@ -84,7 +84,6 @@ func readNextChangeset(reader Reader) (int64, int64, *iavl.ChangeSet, error) {
 	}
 	// Read header
 	version := binary.LittleEndian.Uint64(versionHeader[:8])
-	fmt.Printf("Reading Version: %d\n", version)
 	if version == math.MaxUint64 {
 		return -1, -1, nil, nil
 	}
@@ -100,7 +99,6 @@ func readNextChangeset(reader Reader) (int64, int64, *iavl.ChangeSet, error) {
 			return 0, 0, nil, err
 		}
 		offset += int64(encodedSizeOfKVPair(pair))
-		fmt.Printf("offset: %d\n", offset)
 		changeset.Pairs = append(changeset.Pairs, pair)
 	}
 	if offset != size {
@@ -116,13 +114,11 @@ func readKVPair(reader Reader) (*iavl.KVPair, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("deletion: %d\n", deletion)
 
 	keyLen, err := binary.ReadUvarint(reader)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("keyLen: %d\n", keyLen)
 
 	pair := iavl.KVPair{
 		Delete: deletion == 1,
@@ -131,9 +127,7 @@ func readKVPair(reader Reader) (*iavl.KVPair, error) {
 	if _, err := io.ReadFull(reader, pair.Key); err != nil {
 		return nil, err
 	}
-
-	fmt.Printf("key: %X\n", pair.Key)
-
+	
 	if pair.Delete {
 		return &pair, nil
 	}
@@ -142,8 +136,6 @@ func readKVPair(reader Reader) (*iavl.KVPair, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Printf("valueLen: %d\n", valueLen)
 
 	pair.Value = make([]byte, valueLen)
 	if _, err := io.ReadFull(reader, pair.Value); err != nil {

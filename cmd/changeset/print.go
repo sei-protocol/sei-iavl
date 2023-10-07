@@ -21,7 +21,7 @@ func PrintChangeSetCmd() *cobra.Command {
 func handlePrintChangeset(cmd *cobra.Command, _ []string) error {
 	inputFile, _ := cmd.Flags().GetString("input-file")
 	if inputFile == "" {
-		return errors.New("stores is required")
+		return errors.New("input-file is required")
 	}
 	importer := changeset.NewImporter(inputFile).
 		WithProcessFn(func(version int64, cs *iavl.ChangeSet) (bool, error) {

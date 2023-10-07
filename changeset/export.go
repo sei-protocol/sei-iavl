@@ -102,7 +102,7 @@ func (exporter *Exporter) Start() error {
 }
 
 func writeChangesetChunks(chunkFilePath string, tree *iavl.ImmutableTree, start int64, end int64) (returnErr error) {
-	fmt.Printf("Exporting changeset segment %d-%d\n", start, end)
+	fmt.Printf("Exporting changeset chunk %d-%d\n", start, end)
 	chunkFile, err := createFile(chunkFilePath)
 	zstdWriter, err := zstd.NewWriter(chunkFile)
 
