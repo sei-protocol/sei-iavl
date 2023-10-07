@@ -135,6 +135,7 @@ func WriteChangeSet(writer io.Writer, version int64, cs iavl.ChangeSet) error {
 		return nil
 	}
 
+	fmt.Printf("Version: %d\n", version)
 	var size int
 	items := make([][]byte, 0, len(cs.Pairs))
 	for _, pair := range cs.Pairs {
@@ -151,6 +152,8 @@ func WriteChangeSet(writer io.Writer, version int64, cs iavl.ChangeSet) error {
 	var versionHeader [16]byte
 	binary.LittleEndian.PutUint64(versionHeader[:], uint64(version))
 	binary.LittleEndian.PutUint64(versionHeader[8:], uint64(size))
+
+	fmt.Printf("Total Size: %d\n", size)
 
 	if _, err := writer.Write(versionHeader[:]); err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -170,20 +173,29 @@ func WriteChangeSet(writer io.Writer, version int64, cs iavl.ChangeSet) error {
 // returns error if key/value length overflows.
 func encodeKVPair(pair *iavl.KVPair) ([]byte, error) {
 	buf := make([]byte, encodedSizeOfKVPair(pair))
+	fmt.Printf("encodedSizeOfKVPair: %d\n", encodedSizeOfKVPair(pair))
 
 	offset := 1
 	keyLen := len(pair.Key)
+	fmt.Printf("keyLen: %d\n", keyLen)
+
 	offset += binary.PutUvarint(buf[offset:], uint64(keyLen))
 
 	copy(buf[offset:], pair.Key)
 	if pair.Delete {
 		buf[0] = 1
 		return buf, nil
+	} else {
+		buf[0] = 0
 	}
 
 	offset += keyLen
 	offset += binary.PutUvarint(buf[offset:], uint64(len(pair.Value)))
 	copy(buf[offset:], pair.Value)
+
+	valueLen := len(pair.Value)
+	fmt.Printf("valueLen: %d\n", valueLen)
+
 	return buf, nil
 }
 
