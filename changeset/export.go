@@ -1,6 +1,7 @@
 package changeset
 
 import (
+	"bufio"
 	"context"
 	"encoding/binary"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/alitto/pond"
 	"github.com/cosmos/iavl"
@@ -18,7 +20,7 @@ import (
 )
 
 const (
-	DefaultCacheSize int = 1000000
+	DefaultCacheSize int = 10000000
 )
 
 type Exporter struct {
@@ -50,7 +52,7 @@ func NewExporter(
 
 func (exporter *Exporter) Start() error {
 	// use a worker pool with enough buffer to parallelize the export
-	pool := pond.New(exporter.concurrency, 1024)
+	pool := pond.New(exporter.concurrency, 10240)
 	defer pool.StopAndWait()
 
 	// share the iavl tree between tasks to reuse the node cache
@@ -63,40 +65,45 @@ func (exporter *Exporter) Start() error {
 
 	// split into segments
 	var segmentSize = exporter.segmentSize
-	var groups []*pond.TaskGroupWithContext
 	for i := exporter.start; i < exporter.end; i += segmentSize {
 		end := i + segmentSize
 		if end > exporter.end {
 			end = exporter.end
 		}
+		var chunkFiles []string
 		group, _ := pool.GroupContext(context.Background())
-		startPos := i
-		endPos := end
-		group.Submit(func() error {
-			tree := iavlTreePool.Get().(*iavl.ImmutableTree)
-			defer iavlTreePool.Put(tree)
-			err := dumpChangesetSegment(exporter.outputDir, tree, startPos, endPos)
-			fmt.Printf("Finished exporting segment %d-%d\n", startPos, endPos)
-			return err
-		})
-		groups = append(groups, group)
-	}
+		fmt.Printf("Start exporting segment %d-%d at %s\n", i, end, time.Now().Format(time.RFC3339))
+		for _, workRange := range splitWorkLoad(exporter.concurrency, Range{i, end}) {
+			workRange := workRange
+			chunkFile := filepath.Join(exporter.outputDir, fmt.Sprintf("tmp-chunk-%d-%d.zst", workRange.Start, workRange.End))
+			group.Submit(func() error {
+				tree := iavlTreePool.Get().(*iavl.ImmutableTree)
+				defer iavlTreePool.Put(tree)
+				fmt.Printf("Start exporting chunk %s at %s\n", chunkFile, time.Now().Format(time.RFC3339))
+				err := writeChangesetChunks(chunkFile, tree, workRange.Start, workRange.End)
+				fmt.Printf("Finished exporting chunk %s at %s\n", chunkFile, time.Now().Format(time.RFC3339))
+				return err
+			})
+			chunkFiles = append(chunkFiles, chunkFile)
+		}
 
-	// wait for all task groups to complete
-	for _, group := range groups {
 		if err := group.Wait(); err != nil {
-			fmt.Printf("Error: %v\n", err)
 			return err
 		}
+		err := collectChunksToSegment(exporter.outputDir, chunkFiles)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Finished exporting segment %d-%d at %s\n", i, end, time.Now().Format(time.RFC3339))
 	}
+
 	return nil
 }
 
-func dumpChangesetSegment(outputDir string, tree *iavl.ImmutableTree, start int64, end int64) (returnErr error) {
+func writeChangesetChunks(chunkFilePath string, tree *iavl.ImmutableTree, start int64, end int64) (returnErr error) {
 	fmt.Printf("Exporting changeset segment %d-%d\n", start, end)
-	segmentFilePath := filepath.Join(outputDir, fmt.Sprintf("changeset-%d-%d.zst", start, end))
-	segmentFile, err := createFile(segmentFilePath)
-	zstdWriter, err := zstd.NewWriter(segmentFile)
+	chunkFile, err := createFile(chunkFilePath)
+	zstdWriter, err := zstd.NewWriter(chunkFile)
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -108,7 +115,7 @@ func dumpChangesetSegment(outputDir string, tree *iavl.ImmutableTree, start int6
 		if err != nil {
 			returnErr = err
 		}
-		if err := segmentFile.Close(); returnErr == nil {
+		if err := chunkFile.Close(); returnErr == nil {
 			returnErr = err
 		}
 	}()
@@ -131,6 +138,47 @@ func dumpChangesetSegment(outputDir string, tree *iavl.ImmutableTree, start int6
 	}
 
 	return zstdWriter.Flush()
+}
+
+func collectChunksToSegment(outputFile string, chunkFiles []string) error {
+	fp, err := createFile(outputFile)
+	if err != nil {
+		return err
+	}
+	defer fp.Close()
+
+	bufWriter := bufio.NewWriter(fp)
+	writer, _ := zstd.NewWriter(bufWriter)
+
+	for _, chunkFile := range chunkFiles {
+		if err := copyTmpFile(writer, chunkFile); err != nil {
+			return err
+		}
+		if err := os.Remove(chunkFile); err != nil {
+			return err
+		}
+	}
+
+	if writer != nil {
+		if err := writer.Close(); err != nil {
+			return err
+		}
+	}
+
+	return bufWriter.Flush()
+}
+
+// copyTmpFile append the compressed temporary file to writer
+func copyTmpFile(writer io.Writer, tmpFile string) error {
+	fp, err := os.Open(tmpFile)
+	if err != nil {
+		return err
+	}
+	defer fp.Close()
+
+	reader, _ := zstd.NewReader(fp)
+	_, err = io.Copy(writer, reader)
+	return err
 }
 
 func createFile(name string) (*os.File, error) {
@@ -168,6 +216,23 @@ func WriteChangeSet(writer io.Writer, version int64, cs iavl.ChangeSet) error {
 		}
 	}
 	return nil
+}
+
+type Range struct {
+	Start, End int64
+}
+
+func splitWorkLoad(workers int, full Range) []Range {
+	var ranges []Range
+	chunkSize := (full.End - full.Start + int64(workers) - 1) / int64(workers)
+	for i := full.Start; i < full.End; i += chunkSize {
+		end := i + chunkSize
+		if end > full.End {
+			end = full.End
+		}
+		ranges = append(ranges, Range{Start: i, End: end})
+	}
+	return ranges
 }
 
 // encodeKVPair encode a key-value pair in change set.
