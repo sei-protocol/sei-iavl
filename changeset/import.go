@@ -131,8 +131,8 @@ func readKVPair(reader Reader) (*iavl.KVPair, error) {
 		return nil, err
 	}
 
-	fmt.Printf("key: %s\n", pair.Key)
-	
+	fmt.Printf("key: %X\n", pair.Key)
+
 	if pair.Delete {
 		return &pair, nil
 	}

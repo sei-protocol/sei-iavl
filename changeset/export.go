@@ -190,6 +190,7 @@ func encodeKVPair(pair *iavl.KVPair) ([]byte, error) {
 	} else {
 		buf[0] = 0
 	}
+	fmt.Printf("key: %X\n", pair.Key)
 
 	offset += keyLen
 	fmt.Printf("keyLen: %d, offset: %d\n", keyLen, offset)
