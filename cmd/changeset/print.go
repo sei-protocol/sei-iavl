@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/cosmos/iavl"
 	"github.com/cosmos/iavl/changeset"
@@ -19,6 +20,9 @@ func PrintChangeSetCmd() *cobra.Command {
 
 func handlePrintChangeset(cmd *cobra.Command, _ []string) error {
 	inputFile, _ := cmd.Flags().GetString("input-file")
+	if inputFile == "" {
+		return errors.New("stores is required")
+	}
 	importer := changeset.NewImporter(inputFile).
 		WithProcessFn(func(version int64, cs *iavl.ChangeSet) (bool, error) {
 			if cs != nil {
