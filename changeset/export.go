@@ -181,7 +181,7 @@ func encodeKVPair(pair *iavl.KVPair) ([]byte, error) {
 
 	written := binary.PutUvarint(buf[offset:], uint64(keyLen))
 	offset += written
-	fmt.Printf("offset: %d\n", written, offset)
+	fmt.Printf("written: %d, offset: %d\n", written, offset)
 
 	copy(buf[offset:], pair.Key)
 	if pair.Delete {
@@ -195,10 +195,13 @@ func encodeKVPair(pair *iavl.KVPair) ([]byte, error) {
 	fmt.Printf("offset: %d\n", offset)
 
 	valueLen := len(pair.Value)
-	offset += binary.PutUvarint(buf[offset:], uint64(valueLen))
-	copy(buf[offset:], pair.Value)
+	written = binary.PutUvarint(buf[offset:], uint64(valueLen))
+	fmt.Printf("written: %d, offset: %d\n", written, offset)
 
-	fmt.Printf("valueLen: %d, offset: %d\n", valueLen, offset)
+	offset += written
+	copy(buf[offset:], pair.Value)
+	offset += valueLen
+	fmt.Printf("offset: %d\n", offset)
 
 	return buf, nil
 }
