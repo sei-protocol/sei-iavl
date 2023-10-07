@@ -90,7 +90,8 @@ func (exporter *Exporter) Start() error {
 		if err := group.Wait(); err != nil {
 			return err
 		}
-		err := collectChunksToSegment(exporter.outputDir, chunkFiles)
+		segmentFile := filepath.Join(exporter.outputDir, fmt.Sprintf("changeset-%d-%d.zst", i, end))
+		err := collectChunksToSegment(segmentFile, chunkFiles)
 		if err != nil {
 			return err
 		}
