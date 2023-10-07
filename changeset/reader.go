@@ -6,7 +6,6 @@ import (
 
 type WrapReader struct {
 	readerCloser io.ReadCloser
-	byteReader   io.ByteReader
 	closer       io.Closer
 }
 
@@ -15,7 +14,9 @@ func (r *WrapReader) Read(p []byte) (int, error) {
 }
 
 func (r *WrapReader) ReadByte() (byte, error) {
-	return r.byteReader.ReadByte()
+	var singleByte [1]byte
+	_, err := r.readerCloser.Read(singleByte[:])
+	return singleByte[0], err
 }
 
 func (r *WrapReader) Close() error {

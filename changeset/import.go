@@ -1,7 +1,6 @@
 package changeset
 
 import (
-	"bufio"
 	"encoding/binary"
 	"fmt"
 	"github.com/DataDog/zstd"
@@ -51,8 +50,7 @@ func openChangesetFile(fileName string) (Reader, error) {
 		return nil, err
 	}
 	zstdReaderCloser := zstd.NewReader(fp)
-	bufReader := bufio.NewReader(zstdReaderCloser)
-	return &WrapReader{zstdReaderCloser, bufReader, fp}, nil
+	return &WrapReader{zstdReaderCloser, fp}, nil
 }
 
 func iterateChangeSet(reader Reader, fn func(version int64, changeset *iavl.ChangeSet) (bool, error)) (int64, error) {
