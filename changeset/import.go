@@ -6,6 +6,7 @@ import (
 	"github.com/DataDog/zstd"
 	"github.com/cosmos/iavl"
 	"io"
+	"math"
 	"os"
 )
 
@@ -58,12 +59,12 @@ func iterateChangeSet(reader Reader, fn func(version int64, changeset *iavl.Chan
 	for true {
 		offset, version, changeSet, err := readNextChangeset(reader)
 		if err != nil {
-			if err == io.EOF {
-				// Reaching here means we are done reading everything in the file
-				break
-			} else {
-				return lastOffset, err
-			}
+			return lastOffset, err
+		}
+
+		if offset == -1 || version == -1 {
+			// this means we are done
+			break
 		}
 		shouldStop, err := fn(version, changeSet)
 		lastOffset += offset
@@ -83,9 +84,11 @@ func readNextChangeset(reader Reader) (int64, int64, *iavl.ChangeSet, error) {
 	}
 	// Read header
 	version := binary.LittleEndian.Uint64(versionHeader[:8])
-	fmt.Printf("Version: %d\n", version)
+	fmt.Printf("Reading Version: %d\n", version)
+	if version == math.MaxUint64 {
+		return -1, -1, nil, nil
+	}
 	size := int64(binary.LittleEndian.Uint64(versionHeader[8:16]))
-	fmt.Printf("Size: %d\n", size)
 	if size <= 0 {
 		return 16, int64(version), nil, nil
 	}
