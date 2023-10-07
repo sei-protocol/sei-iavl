@@ -130,12 +130,6 @@ func writeChangesetChunks(chunkFilePath string, tree *iavl.ImmutableTree, start 
 		fmt.Printf("Error: %v\n", err)
 		return err
 	}
-	var endingHeader [16]byte
-	binary.LittleEndian.PutUint64(endingHeader[:], math.MaxUint64)
-	binary.LittleEndian.PutUint64(endingHeader[8:], uint64(0))
-	if _, err := zstdWriter.Write(endingHeader[:]); err != nil {
-		return err
-	}
 
 	return zstdWriter.Flush()
 }
@@ -145,10 +139,14 @@ func collectChunksToSegment(outputFile string, chunkFiles []string) error {
 	if err != nil {
 		return err
 	}
-	defer fp.Close()
 
 	bufWriter := bufio.NewWriter(fp)
 	writer, _ := zstd.NewWriter(bufWriter)
+
+	defer func() {
+		fp.Close()
+		writer.Close()
+	}()
 
 	for _, chunkFile := range chunkFiles {
 		if err := copyTmpFile(writer, chunkFile); err != nil {
@@ -159,10 +157,11 @@ func collectChunksToSegment(outputFile string, chunkFiles []string) error {
 		}
 	}
 
-	if writer != nil {
-		if err := writer.Close(); err != nil {
-			return err
-		}
+	var endingHeader [16]byte
+	binary.LittleEndian.PutUint64(endingHeader[:], math.MaxUint64)
+	binary.LittleEndian.PutUint64(endingHeader[8:], uint64(0))
+	if _, err := bufWriter.Write(endingHeader[:]); err != nil {
+		return err
 	}
 
 	return bufWriter.Flush()
