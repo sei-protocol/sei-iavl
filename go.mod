@@ -3,7 +3,7 @@ module github.com/cosmos/iavl
 go 1.18
 
 require (
-	github.com/DataDog/zstd v1.4.5
+	github.com/DataDog/zstd v1.5.5
 	github.com/alitto/pond v1.8.3
 	github.com/confio/ics23/go v0.7.0
 	github.com/gogo/protobuf v1.3.2
