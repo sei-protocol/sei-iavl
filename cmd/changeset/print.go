@@ -23,15 +23,14 @@ func handlePrintChangeset(cmd *cobra.Command, _ []string) error {
 	if inputFile == "" {
 		return errors.New("input-file is required")
 	}
-	importer := changeset.NewImporter(inputFile).
-		WithProcessFn(func(version int64, cs *iavl.ChangeSet) (bool, error) {
-			if cs != nil {
-				for _, pair := range cs.Pairs {
-					fmt.Printf("Version: %d, delete: %t, key: %X, value: %X\n", version, pair.Delete, pair.Key, pair.Value)
-				}
+	importer := changeset.NewImporter(inputFile).WithProcessFn(func(version int64, cs *iavl.ChangeSet) (bool, error) {
+		if cs != nil {
+			for _, pair := range cs.Pairs {
+				fmt.Printf("Version: %d, delete: %t, key: %X, value: %X\n", version, pair.Delete, pair.Key, pair.Value)
 			}
-			return true, nil
-		})
+		}
+		return true, nil
+	})
 	_, err := importer.Start()
 	if err != nil {
 		panic(err)

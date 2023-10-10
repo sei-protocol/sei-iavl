@@ -190,7 +190,6 @@ func WriteChangeSet(writer io.Writer, version int64, cs iavl.ChangeSet) error {
 		return nil
 	}
 
-	fmt.Printf("Writing Version: %d\n", version)
 	var size int
 	items := make([][]byte, 0, len(cs.Pairs))
 	for _, pair := range cs.Pairs {

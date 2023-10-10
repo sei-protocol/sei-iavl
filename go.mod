@@ -3,6 +3,7 @@ module github.com/cosmos/iavl
 go 1.18
 
 require (
+	github.com/DataDog/zstd v1.4.5
 	github.com/alitto/pond v1.8.3
 	github.com/confio/ics23/go v0.7.0
 	github.com/gogo/protobuf v1.3.2
@@ -17,7 +18,6 @@ require (
 )
 
 require (
-	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.2 // indirect
