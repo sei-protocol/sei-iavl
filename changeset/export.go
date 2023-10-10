@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 	"math/bits"
 	"os"
 	"path/filepath"
@@ -153,6 +154,15 @@ func collectChunksToSegment(outputFile string, chunkFiles []string) error {
 			return err
 		}
 	}
+
+	// Write ending header
+	var endingHeader [16]byte
+	binary.LittleEndian.PutUint64(endingHeader[:], uint64(math.MaxUint64))
+	binary.LittleEndian.PutUint64(endingHeader[8:16], uint64(0))
+	if _, err := writer.Write(endingHeader[:]); err != nil {
+		return err
+	}
+	
 	err = writer.Close()
 	if err != nil {
 		return err
