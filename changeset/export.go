@@ -143,10 +143,7 @@ func collectChunksToSegment(outputFile string, chunkFiles []string) error {
 	bufWriter := bufio.NewWriter(fp)
 	writer, _ := zstd.NewWriter(bufWriter)
 
-	defer func() {
-		fp.Close()
-		writer.Close()
-	}()
+	defer fp.Close()
 
 	for _, chunkFile := range chunkFiles {
 		if err := copyTmpFile(writer, chunkFile); err != nil {
@@ -156,7 +153,10 @@ func collectChunksToSegment(outputFile string, chunkFiles []string) error {
 			return err
 		}
 	}
-
+	err = writer.Close()
+	if err != nil {
+		return err
+	}
 	return bufWriter.Flush()
 }
 
