@@ -162,7 +162,7 @@ func collectChunksToSegment(outputFile string, chunkFiles []string) error {
 	if _, err := writer.Write(endingHeader[:]); err != nil {
 		return err
 	}
-	
+
 	err = writer.Close()
 	if err != nil {
 		return err

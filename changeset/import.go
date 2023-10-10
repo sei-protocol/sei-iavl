@@ -65,7 +65,6 @@ func iterateChangeSet(reader Reader, fn func(version int64, changeset *iavl.Chan
 
 		if offset == -1 || version == -1 {
 			// this means we are done
-			fmt.Printf("Done\n")
 			break
 		}
 		shouldStop, err := fn(version, changeSet)
