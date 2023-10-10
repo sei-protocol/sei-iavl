@@ -56,14 +56,16 @@ func openChangesetFile(fileName string) (Reader, error) {
 
 func iterateChangeSet(reader Reader, fn func(version int64, changeset *iavl.ChangeSet) (bool, error)) (int64, error) {
 	var lastOffset int64
-	for true {
+	for {
 		offset, version, changeSet, err := readNextChangeset(reader)
 		if err != nil {
+			fmt.Printf("Error: %v\n", err)
 			return lastOffset, err
 		}
 
 		if offset == -1 || version == -1 {
 			// this means we are done
+			fmt.Printf("Done\n")
 			break
 		}
 		shouldStop, err := fn(version, changeSet)
