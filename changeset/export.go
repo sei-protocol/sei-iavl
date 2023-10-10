@@ -6,7 +6,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"math"
 	"math/bits"
 	"os"
 	"path/filepath"
@@ -158,13 +157,6 @@ func collectChunksToSegment(outputFile string, chunkFiles []string) error {
 		}
 	}
 
-	var endingHeader [16]byte
-	binary.LittleEndian.PutUint64(endingHeader[:], math.MaxUint64)
-	binary.LittleEndian.PutUint64(endingHeader[8:], uint64(0))
-	if _, err := writer.Write(endingHeader[:]); err != nil {
-		return err
-	}
-
 	return bufWriter.Flush()
 }
 
@@ -205,7 +197,7 @@ func WriteChangeSet(writer io.Writer, version int64, cs iavl.ChangeSet) error {
 	fmt.Printf("Writing version %d with %d items at %s\n", version, len(items), time.Now().Format(time.RFC3339))
 	var versionHeader [16]byte
 	binary.LittleEndian.PutUint64(versionHeader[:], uint64(version))
-	binary.LittleEndian.PutUint64(versionHeader[8:], uint64(size))
+	binary.LittleEndian.PutUint64(versionHeader[8:16], uint64(size))
 
 	if _, err := writer.Write(versionHeader[:]); err != nil {
 		return err
