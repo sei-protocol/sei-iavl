@@ -3,12 +3,12 @@ module github.com/cosmos/iavl
 go 1.18
 
 require (
-	github.com/DataDog/zstd v1.5.5
+	github.com/DataDog/zstd v1.4.1
 	github.com/alitto/pond v1.8.3
 	github.com/confio/ics23/go v0.7.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/mock v1.6.0
-	github.com/klauspost/compress v1.15.1
+	github.com/klauspost/compress v1.17.0
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.5.0
 	github.com/stretchr/testify v1.8.1

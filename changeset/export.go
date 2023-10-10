@@ -161,11 +161,11 @@ func collectChunksToSegment(outputFile string, chunkFiles []string) error {
 	var endingHeader [16]byte
 	binary.LittleEndian.PutUint64(endingHeader[:], math.MaxUint64)
 	binary.LittleEndian.PutUint64(endingHeader[8:], uint64(0))
-	if _, err := bufWriter.Write(endingHeader[:]); err != nil {
+	if _, err := writer.Write(endingHeader[:]); err != nil {
 		return err
 	}
 
-	return bufWriter.Flush()
+	return writer.Flush()
 }
 
 // copyTmpFile append the compressed temporary file to writer
