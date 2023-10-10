@@ -165,7 +165,7 @@ func collectChunksToSegment(outputFile string, chunkFiles []string) error {
 		return err
 	}
 
-	return writer.Flush()
+	return bufWriter.Flush()
 }
 
 // copyTmpFile append the compressed temporary file to writer
