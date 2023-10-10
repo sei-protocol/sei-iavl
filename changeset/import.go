@@ -86,11 +86,11 @@ func readNextChangeset(reader Reader) (int64, int64, *iavl.ChangeSet, error) {
 	}
 	// Read header
 	version := binary.LittleEndian.Uint64(versionHeader[:8])
-	fmt.Printf("Reading version %d\n", version)
 	if version == math.MaxUint64 {
 		return -1, -1, nil, nil
 	}
 	size := int64(binary.LittleEndian.Uint64(versionHeader[8:16]))
+	fmt.Printf("Reading version: %d, size: %d\n", version, size)
 	if size <= 0 {
 		return 16, int64(version), nil, nil
 	}
