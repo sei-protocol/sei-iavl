@@ -202,6 +202,7 @@ func WriteChangeSet(writer io.Writer, version int64, cs iavl.ChangeSet) error {
 	}
 
 	// Write header
+	fmt.Printf("Writing version %d with %d items at %s\n", version, len(items), time.Now().Format(time.RFC3339))
 	var versionHeader [16]byte
 	binary.LittleEndian.PutUint64(versionHeader[:], uint64(version))
 	binary.LittleEndian.PutUint64(versionHeader[8:], uint64(size))
