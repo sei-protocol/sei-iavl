@@ -15,9 +15,9 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/cosmos/gorocksdb"
 	"github.com/cosmos/iavl"
 	ibytes "github.com/cosmos/iavl/internal/bytes"
+	"github.com/linxGnu/grocksdb"
 )
 
 // TODO: make this configurable?
@@ -98,7 +98,7 @@ func OpenDB(dir string) (dbm.DB, error) {
 	return db, nil
 }
 
-func writeToRocksDBConcurrently(db *gorocksdb.DB, kvEntries []KeyValuePair, concurrency int, maxRetries int) {
+func writeToRocksDBConcurrently(db *grocksdb.DB, kvEntries []KeyValuePair, concurrency int, maxRetries int) {
 	wg := &sync.WaitGroup{}
 	chunks := len(kvEntries) / concurrency
 	for i := 0; i < concurrency; i++ {
@@ -110,7 +110,7 @@ func writeToRocksDBConcurrently(db *gorocksdb.DB, kvEntries []KeyValuePair, conc
 		wg.Add(1)
 		go func(start, end int) {
 			defer wg.Done()
-			wo := gorocksdb.NewDefaultWriteOptions()
+			wo := grocksdb.NewDefaultWriteOptions()
 			for j := start; j < end; j++ {
 				retries := 0
 				for {
@@ -134,10 +134,10 @@ func writeToRocksDBConcurrently(db *gorocksdb.DB, kvEntries []KeyValuePair, conc
 }
 
 func RocksDBBenchmark(dataFile string, dbPath string) {
-	opts := gorocksdb.NewDefaultOptions()
+	opts := grocksdb.NewDefaultOptions()
 	opts.SetCreateIfMissing(true)
 
-	db, err := gorocksdb.OpenDb(opts, dbPath)
+	db, err := grocksdb.OpenDb(opts, dbPath)
 	if err != nil {
 		log.Fatalf("Failed to open the DB: %v", err)
 	}

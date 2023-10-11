@@ -5,6 +5,11 @@ BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
 DOCKER_BUF := docker run -v $(shell pwd):/workspace --workdir /workspace bufbuild/buf
 DOCKER := $(shell which docker)
 HTTPS_GIT := https://github.com/cosmos/iavl.git
+ROCKSDB_PATH := $(shell brew --prefix rocksdb)
+SNAPPY_PATH := $(shell brew --prefix snappy)
+LZ4_PATH := $(shell brew --prefix lz4)
+ZSTD_PATH := $(shell brew --prefix zstd)
+
 
 PDFFLAGS := -pdf --nodefraction=0.1
 CMDFLAGS := -ldflags -X TENDERMINT_IAVL_COLORS_ON=on 
@@ -14,9 +19,9 @@ all: lint test install
 
 install:
 ifeq ($(COLORS_ON),)
-	go install ./cmd/iaviewer
+	CGO_CFLAGS="-I$(ROCKSDB_PATH)/include" CGO_LDFLAGS="-L$(ROCKSDB_PATH)/lib -L$(SNAPPY_PATH)/lib -L$(LZ4_PATH)/lib -L$(ZSTD_PATH)/lib -lrocksdb -lstdc++ -lm -lz -lsnappy -llz4 -lzstd" go install ./cmd/iaviewer
 else
-	go install $(CMDFLAGS) ./cmd/iaviewer
+	CGO_CFLAGS="-I$(ROCKSDB_PATH)/include" CGO_LDFLAGS="-L$(ROCKSDB_PATH)/lib -L$(SNAPPY_PATH)/lib -L$(LZ4_PATH)/lib -L$(ZSTD_PATH)/lib -lrocksdb -lstdc++ -lm -lz -lsnappy -llz4 -lzstd" go install $(CMDFLAGS) ./cmd/iaviewer
 endif
 .PHONY: install
 
