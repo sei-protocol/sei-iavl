@@ -49,12 +49,11 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error reading data: %s\n", err)
 		os.Exit(1)
 	}
-	treeHash, err := tree.Hash()
+	_, err = tree.Hash()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error hashing tree: %s\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Tree hash is %X, tree size is %d\n", treeHash, tree.ImmutableTree().Size())
 
 	switch args[0] {
 	case "data":
@@ -134,8 +133,7 @@ func ReadTree(dir string, version int, prefix []byte) (*iavl.MutableTree, error)
 	if err != nil {
 		return nil, err
 	}
-	ver, err := tree.LoadVersion(int64(version))
-	fmt.Printf("Got version: %d\n", ver)
+	_, err = tree.LoadVersion(int64(version))
 	return tree, err
 }
 
