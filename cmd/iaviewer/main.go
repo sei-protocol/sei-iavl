@@ -32,11 +32,16 @@ type KeyValuePair struct {
 
 func main() {
 	args := os.Args[1:]
-	if len(args) < 3 || (args[0] != "data" && args[0] != "keys" && args[0] != "shape" && args[0] != "versions" && args[0] != "size" && args[0] != "kvEntries") {
+	if len(args) < 3 || args[0] != "data" && args[0] != "keys" && args[0] != "shape" && args[0] != "versions" && args[0] != "size" && args[0] != "kvEntries" && args[0] != "dbBenchmark" {
 		fmt.Fprintln(os.Stderr, "Usage: iaviewer <data|keys|shape|versions|size> <leveldb dir> <prefix> [version number]")
 		fmt.Fprintln(os.Stderr, "<prefix> is the prefix of db, and the iavl tree of different modules in cosmos-sdk uses ")
 		fmt.Fprintln(os.Stderr, "different <prefix> to identify, just like \"s/k:gov/\" represents the prefix of gov module")
 		os.Exit(1)
+	}
+
+	if args[0] == "dbBenchmark" {
+		RocksDBBenchmark(args[1], args[2])
+		return
 	}
 
 	version := 0
@@ -255,8 +260,6 @@ func ReadKVEntriesFromFile(filename string) ([]KeyValuePair, error) {
 
 		kvPairs = append(kvPairs, KeyValuePair{Key: key, Value: value})
 	}
-
-	fmt.Printf("kv Entries %+v\n", kvPairs)
 
 	return kvPairs, nil
 }
