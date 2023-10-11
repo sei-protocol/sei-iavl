@@ -5,12 +5,17 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"log"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/cosmos/gorocksdb"
 	"github.com/cosmos/iavl"
 	ibytes "github.com/cosmos/iavl/internal/bytes"
 )
@@ -91,6 +96,75 @@ func OpenDB(dir string) (dbm.DB, error) {
 		return nil, err
 	}
 	return db, nil
+}
+
+func writeToRocksDBConcurrently(db *gorocksdb.DB, kvEntries []KeyValuePair, concurrency int, maxRetries int) {
+	wg := &sync.WaitGroup{}
+	chunks := len(kvEntries) / concurrency
+	for i := 0; i < concurrency; i++ {
+		start := i * chunks
+		end := start + chunks
+		if i == concurrency-1 {
+			end = len(kvEntries)
+		}
+		wg.Add(1)
+		go func(start, end int) {
+			defer wg.Done()
+			wo := gorocksdb.NewDefaultWriteOptions()
+			for j := start; j < end; j++ {
+				retries := 0
+				for {
+					if err := db.Put(wo, kvEntries[j].Key, kvEntries[j].Value); err != nil {
+						retries++
+						if retries > maxRetries {
+							log.Printf("Failed to write key after %d attempts: %v", maxRetries, err)
+							break
+						}
+						// TODO: Add a sleep or back-off before retrying
+						// time.Sleep(time.Second * time.Duration(retries))
+					} else {
+						// Success, so break the retry loop
+						break
+					}
+				}
+			}
+		}(start, end)
+	}
+	wg.Wait()
+}
+
+func RocksDBBenchmark(dataFile string, dbPath string) {
+	opts := gorocksdb.NewDefaultOptions()
+	opts.SetCreateIfMissing(true)
+
+	db, err := gorocksdb.OpenDb(opts, dbPath)
+	if err != nil {
+		log.Fatalf("Failed to open the DB: %v", err)
+	}
+	defer db.Close()
+
+	// Read key-value entries from the file
+	kvEntries, err := ReadKVEntriesFromFile(dataFile)
+	if err != nil {
+		log.Fatalf("Failed to read KV entries: %v", err)
+	}
+
+	// Shuffle the entries
+	RandomShuffle(kvEntries)
+
+	// Define concurrency level and maximum retry attempts
+	concurrency := 4
+	maxRetries := 3
+
+	// Write shuffled entries to RocksDB concurrently
+	writeToRocksDBConcurrently(db, kvEntries, concurrency, maxRetries)
+}
+
+func RandomShuffle(kvPairs []KeyValuePair) {
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(kvPairs), func(i, j int) {
+		kvPairs[i], kvPairs[j] = kvPairs[j], kvPairs[i]
+	})
 }
 
 // nolint: deadcode
