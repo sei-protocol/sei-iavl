@@ -1,9 +1,10 @@
 package main
 
 import (
-	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -19,9 +20,14 @@ const (
 	DefaultCacheSize int = 10000
 )
 
+type KeyValuePair struct {
+	Key   []byte `json:"key"`
+	Value []byte `json:"value"`
+}
+
 func main() {
 	args := os.Args[1:]
-	if len(args) < 3 || (args[0] != "data" && args[0] != "keys" && args[0] != "shape" && args[0] != "versions" && args[0] != "size") {
+	if len(args) < 3 || (args[0] != "data" && args[0] != "keys" && args[0] != "shape" && args[0] != "versions" && args[0] != "size" && args[0] != "kvEntries") {
 		fmt.Fprintln(os.Stderr, "Usage: iaviewer <data|keys|shape|versions|size> <leveldb dir> <prefix> [version number]")
 		fmt.Fprintln(os.Stderr, "<prefix> is the prefix of db, and the iavl tree of different modules in cosmos-sdk uses ")
 		fmt.Fprintln(os.Stderr, "different <prefix> to identify, just like \"s/k:gov/\" represents the prefix of gov module")
@@ -52,9 +58,11 @@ func main() {
 
 	switch args[0] {
 	case "data":
-		PrintTreeData(tree, false)
+		PrintTreeData(tree)
 	case "keys":
-		PrintTreeData(tree, true)
+		PrintTreeData(tree)
+	case "kvEntries":
+		PrintTreeData(tree)
 	case "shape":
 		PrintShape(tree)
 	case "versions":
@@ -131,27 +139,66 @@ func ReadTree(dir string, version int, prefix []byte) (*iavl.MutableTree, error)
 	return tree, err
 }
 
-func PrintTreeData(tree *iavl.MutableTree, keysOnly bool) {
-	fmt.Println("Printing all keys with hashed values (to detect diff)")
-	totalKeySize := 0
-	totalValSize := 0
-	totalNumKeys := 0
-	keyPrefixMap := map[string]int{}
+func PrintTreeData(tree *iavl.MutableTree) {
 	tree.Iterate(func(key []byte, value []byte) bool {
-		printKey := parseWeaveKey(key)
-		if keysOnly {
-			fmt.Printf("%s\n", printKey)
-		} else {
-			digest := sha256.Sum256(value)
-			fmt.Printf("%s\n    %X\n", printKey, digest)
+		if err := writeByteSliceToStdout(key); err != nil {
+			panic(err)
 		}
-		totalKeySize += len(key)
-		totalValSize += len(value)
-		totalNumKeys++
-		keyPrefixMap[fmt.Sprintf("%x", key[0])]++
+		if err := writeByteSliceToStdout(value); err != nil {
+			panic(err)
+		}
 		return false
 	})
-	fmt.Printf("Total key count %d, total key bytes %d, total value bytes %d, prefix map %v\n", totalNumKeys, totalKeySize, totalValSize, keyPrefixMap)
+}
+
+func ReadKVEntriesFromFile(filename string) ([]KeyValuePair, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	var kvPairs []KeyValuePair
+	for {
+		key, err := readByteSlice(f)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		value, err := readByteSlice(f)
+		if err != nil {
+			return nil, err
+		}
+
+		kvPairs = append(kvPairs, KeyValuePair{Key: key, Value: value})
+	}
+
+	fmt.Printf("kv Entries %+v\n", kvPairs)
+
+	return kvPairs, nil
+}
+
+func readByteSlice(r io.Reader) ([]byte, error) {
+	var length uint32
+	if err := binary.Read(r, binary.LittleEndian, &length); err != nil {
+		return nil, err
+	}
+
+	data := make([]byte, length)
+	_, err := io.ReadFull(r, data)
+	return data, err
+}
+
+func writeByteSliceToStdout(data []byte) error {
+	length := uint32(len(data))
+	if err := binary.Write(os.Stdout, binary.LittleEndian, length); err != nil {
+		return err
+	}
+	_, err := os.Stdout.Write(data)
+	return err
 }
 
 // parseWeaveKey assumes a separating : where all in front should be ascii,
