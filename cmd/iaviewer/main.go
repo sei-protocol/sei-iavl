@@ -167,6 +167,14 @@ func RandomShuffle(kvPairs []KeyValuePair) {
 	})
 }
 
+func addRandomBytes(data []byte, numBytes int) []byte {
+	randomBytes := make([]byte, numBytes)
+	if _, err := rand.Read(randomBytes); err != nil {
+		log.Fatalf("Failed to generate random bytes: %v", err)
+	}
+	return append(data, randomBytes...)
+}
+
 // nolint: deadcode
 func PrintDBStats(db dbm.DB) {
 	count := 0
