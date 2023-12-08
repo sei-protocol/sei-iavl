@@ -640,7 +640,7 @@ func (ndb *nodeDB) SaveOrphans(version int64, orphans map[string]int64) error {
 	}
 
 	for hash, fromVersion := range orphans {
-		logger.Debug("SAVEORPHAN %v-%v %X\n", fromVersion, toVersion, hash)
+		//fmt.Printf("SAVEORPHAN %v-%v %X\n", fromVersion, toVersion, hash)
 		err := ndb.saveOrphan([]byte(hash), fromVersion, toVersion)
 		if err != nil {
 			return err
@@ -916,6 +916,7 @@ func (ndb *nodeDB) SaveRoot(root *Node, version int64) error {
 	if len(root.GetHash()) == 0 {
 		return ErrRootMissingHash
 	}
+	fmt.Printf("Saving root %s at version %d\n", string(root.key), version)
 	return ndb.saveRoot(root.GetHash(), version)
 }
 

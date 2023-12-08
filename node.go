@@ -254,9 +254,11 @@ func (node *Node) String() string {
 	if len(node.hash) > 0 {
 		hashstr = fmt.Sprintf("%X", node.hash)
 	}
-	return fmt.Sprintf("Node{%s:%s@%d %X;%X}#%s",
+	return fmt.Sprintf("Node key:%s, value:%s, height: %d, size:%d, version:%d, lh:%X, rh:%X, #%s",
 		ColoredBytes(node.key, Green, Blue),
 		ColoredBytes(node.value, Cyan, Blue),
+		node.height,
+		node.size,
 		node.version,
 		node.leftHash, node.rightHash,
 		hashstr)

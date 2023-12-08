@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/cosmos/iavl/internal/encoding"
@@ -1480,4 +1481,112 @@ func TestSaveCurrentVersion_ChangedHash(t *testing.T) {
 	tree.Set([]byte("b"), []byte{0x02})
 	_, version, err = tree.SaveCurrentVersion()
 	require.Error(t, err)
+}
+
+func TestAddPrint(t *testing.T) {
+	tree := setupMutableTree(t)
+	tree.Set([]byte("1"), []byte("1"))
+	tree.SaveVersion()
+	shape, err := tree.ITree.RenderShape("\t", myNodeEncoder)
+	require.NoError(t, err)
+	fmt.Printf("%s\n", strings.Join(shape, "\n"))
+	fmt.Printf("===========================================\n")
+	tree.Set([]byte("2"), []byte("2"))
+	tree.SaveVersion()
+	shape, err = tree.ITree.RenderShape("\t", myNodeEncoder)
+	require.NoError(t, err)
+	fmt.Printf("%s\n", strings.Join(shape, "\n"))
+	fmt.Printf("===========================================\n")
+	tree.Set([]byte("3"), []byte("3"))
+	tree.SaveVersion()
+	shape, _ = tree.ITree.RenderShape("\t", myNodeEncoder)
+	fmt.Printf("%s\n", strings.Join(shape, "\n"))
+	fmt.Printf("===========================================\n")
+	tree.Set([]byte("4"), []byte("4"))
+	tree.SaveVersion()
+	shape, _ = tree.ITree.RenderShape("\t", myNodeEncoder)
+	fmt.Printf("%s\n", strings.Join(shape, "\n"))
+	fmt.Printf("===========================================\n")
+	tree.Set([]byte("5"), []byte("5"))
+	tree.SaveVersion()
+	shape, err = tree.ITree.RenderShape("\t", myNodeEncoder)
+	fmt.Printf("%s\n", strings.Join(shape, "\n"))
+	fmt.Printf("===========================================\n")
+	tree.Set([]byte("6"), []byte("6"))
+	tree.SaveVersion()
+	shape, _ = tree.ITree.RenderShape("\t", myNodeEncoder)
+	fmt.Printf("%s", strings.Join(shape, "\n"))
+	fmt.Printf("===========================================\n")
+	tree.Set([]byte("7"), []byte("7"))
+	tree.SaveVersion()
+	shape, _ = tree.ITree.RenderShape("\t", myNodeEncoder)
+	fmt.Printf("%s", strings.Join(shape, "\n"))
+	fmt.Printf("===========================================\n")
+	tree.Set([]byte("8"), []byte("9"))
+	tree.SaveVersion()
+	shape, _ = tree.ITree.RenderShape("\t", myNodeEncoder)
+	fmt.Printf("%s", strings.Join(shape, "\n"))
+	fmt.Printf("===========================================\n")
+	tree.Set([]byte("9"), []byte("9"))
+	tree.SaveVersion()
+	shape, _ = tree.ITree.RenderShape("\t", myNodeEncoder)
+	fmt.Printf("%s", strings.Join(shape, "\n"))
+	fmt.Printf("===========================================\n")
+}
+
+func TestAddVersions(t *testing.T) {
+	tree := setupMutableTree(t)
+
+	// step 1
+	tree.Set([]byte("1"), []byte("1"))
+	tree.SaveVersion()
+	tree.ndb.traverse(func(key, value []byte) error {
+		fmt.Printf("db key: %s\n", key)
+		return nil
+	})
+	shape, err := tree.ITree.RenderShape("\t", myNodeEncoder)
+	require.NoError(t, err)
+	fmt.Printf("%s\n", strings.Join(shape, "\n"))
+	fmt.Printf("=========================\n")
+
+	// step 2
+	tree.Set([]byte("2"), []byte("2"))
+	tree.SaveVersion()
+	tree.ndb.traverse(func(key, value []byte) error {
+		fmt.Printf("db key: %s\n", key)
+		return nil
+	})
+	fmt.Printf("tree version: %d\n", tree.Version())
+	shape, err = tree.ITree.RenderShape("\t", myNodeEncoder)
+	fmt.Printf("%s\n", strings.Join(shape, "\n"))
+	fmt.Printf("=========================\n")
+
+	// step 3
+	tree.SaveVersion()
+	tree.ndb.traverse(func(key, value []byte) error {
+		fmt.Printf("db key: %s\n", key)
+		return nil
+	})
+
+	// step 4
+	tree.Set([]byte("2"), []byte("4"))
+	tree.SaveVersion()
+	tree.ndb.traverse(func(key, value []byte) error {
+		fmt.Printf("db key: %s\n", key)
+		return nil
+	})
+	fmt.Printf("tree version: %d\n", tree.Version())
+	shape, err = tree.ITree.RenderShape("\t", myNodeEncoder)
+	fmt.Printf("%s\n", strings.Join(shape, "\n"))
+	fmt.Printf("=========================\n")
+
+}
+
+// defaultNodeEncoder can encode any node unless the client overrides it
+func myNodeEncoder(key []byte, depth int, isLeaf bool) string {
+	if isLeaf {
+		return fmt.Sprintf("%s-%s", "LF", string(key))
+	}
+	return fmt.Sprintf("%s-%s", "BR", string(key))
+
 }

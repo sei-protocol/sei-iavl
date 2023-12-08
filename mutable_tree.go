@@ -168,6 +168,7 @@ func (tree *MutableTree) Set(key, value []byte) (updated bool, err error) {
 		return false, err
 	}
 	err = tree.addOrphans(orphaned)
+
 	if err != nil {
 		return updated, err
 	}
@@ -271,6 +272,10 @@ func (tree *MutableTree) set(key []byte, value []byte) (orphans []*Node, updated
 
 	orphans = tree.prepareOrphansSlice()
 	tree.ITree.root, updated, err = tree.recursiveSet(tree.ITree.root, key, value, &orphans)
+	if err != nil {
+		return nil, updated, err
+	}
+
 	return orphans, updated, err
 }
 
@@ -1405,6 +1410,7 @@ func (tree *MutableTree) addOrphans(orphans []*Node) error {
 		if len(node.GetHash()) == 0 {
 			return fmt.Errorf("expected to find node hash, but was empty")
 		}
+		fmt.Printf("adding orphan: %s\n", node.String())
 		tree.orphans[unsafeToStr(node.GetHash())] = node.GetVersion()
 	}
 	return nil
