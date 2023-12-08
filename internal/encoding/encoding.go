@@ -116,7 +116,7 @@ func EncodeBytesSize(bz []byte) int {
 	return EncodeUvarintSize(uint64(len(bz))) + len(bz)
 }
 
-// EncodeUvarint writes a varint-encoded unsigned integer to an io.Writer.
+// EncodeUvarint writes a varint-encoded unsigned integer to an changeset.Writer.
 func EncodeUvarint(w io.Writer, u uint64) error {
 	// See comment in encodeVarint
 	buf := uvarintPool.Get().(*[binary.MaxVarintLen64]byte)
@@ -137,7 +137,7 @@ func EncodeUvarintSize(u uint64) int {
 	return (bits.Len64(u) + 6) / 7
 }
 
-// EncodeVarint writes a varint-encoded integer to an io.Writer.
+// EncodeVarint writes a varint-encoded integer to an changeset.Writer.
 func EncodeVarint(w io.Writer, i int64) error {
 	// Use a pool here to reduce allocations.
 	//

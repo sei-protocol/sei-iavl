@@ -640,7 +640,7 @@ func (ndb *nodeDB) SaveOrphans(version int64, orphans map[string]int64) error {
 	}
 
 	for hash, fromVersion := range orphans {
-		logger.Debug("SAVEORPHAN %v-%v %X\n", fromVersion, toVersion, hash)
+		//fmt.Printf("SAVEORPHAN %v-%v %X\n", fromVersion, toVersion, hash)
 		err := ndb.saveOrphan([]byte(hash), fromVersion, toVersion)
 		if err != nil {
 			return err
@@ -764,7 +764,6 @@ func (ndb *nodeDB) getPreviousVersion(version int64) (int64, error) {
 		rootKeyFormat.Scan(k, &pversion)
 		return pversion, nil
 	}
-
 	if err := itr.Error(); err != nil {
 		return 0, err
 	}
@@ -917,6 +916,7 @@ func (ndb *nodeDB) SaveRoot(root *Node, version int64) error {
 	if len(root.GetHash()) == 0 {
 		return ErrRootMissingHash
 	}
+	fmt.Printf("Saving root %s at version %d\n", string(root.key), version)
 	return ndb.saveRoot(root.GetHash(), version)
 }
 
@@ -1059,6 +1059,41 @@ func (ndb *nodeDB) traverseNodes(fn func(hash []byte, node *Node) error) error {
 		}
 	}
 	return nil
+}
+
+// traverseStateChanges iterate the range of versions, compare each version to its predecessor to extract the state changes of it.
+// endVersion is exclusive, set to `math.MaxInt64` to cover the latest version.
+func (ndb *nodeDB) traverseStateChanges(startVersion, endVersion int64, fn func(version int64, changeSet *ChangeSet) error) error {
+	predecessor, err := ndb.getPreviousVersion(startVersion)
+	if err != nil {
+		return err
+	}
+	prevRoot, err := ndb.getRoot(predecessor)
+	if err != nil {
+		return err
+	}
+	return ndb.traverseRange(rootKeyFormat.Key(startVersion), rootKeyFormat.Key(endVersion), func(k, hash []byte) error {
+		var version int64
+		rootKeyFormat.Scan(k, &version)
+
+		var changeSet ChangeSet
+		receiveKVPair := func(pair *KVPair) error {
+			changeSet.Pairs = append(changeSet.Pairs, pair)
+			return nil
+		}
+
+		if err := ndb.extractStateChanges(predecessor, prevRoot, hash, receiveKVPair); err != nil {
+			return err
+		}
+
+		if err := fn(version, &changeSet); err != nil {
+			return err
+		}
+
+		predecessor = version
+		prevRoot = hash
+		return nil
+	})
 }
 
 func (ndb *nodeDB) String() (string, error) {

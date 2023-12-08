@@ -15,10 +15,13 @@ all: lint test install
 install:
 ifeq ($(COLORS_ON),)
 	go install ./cmd/iaviewer
+	go install ./cmd/changeset
 else
 	go install $(CMDFLAGS) ./cmd/iaviewer
+	go install $(CMDFLAGS) ./cmd/changeset
 endif
 .PHONY: install
+
 
 test-short:
 	@echo "--> Running go test"
@@ -125,5 +128,5 @@ proto-check-breaking:
 
 proto-gen:
 	@echo "Generating Protobuf files"
-	$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace tendermintdev/sdk-proto-gen:master sh scripts/protocgen.sh
+	$(DOCKER) run --platform linux/amd64 --rm -v $(CURDIR):/workspace --workdir /workspace tendermintdev/sdk-proto-gen:master sh scripts/protocgen.sh
 .PHONY: proto-gen-d

@@ -86,14 +86,15 @@ func (t *ImmutableTree) renderNode(node *Node, indent string, depth int, encoder
 	}
 	// handle leaf
 	if node.isLeaf() {
-		here := fmt.Sprintf("%s%s", prefix, encoder(node.GetNodeKey(), depth, true))
+		here := fmt.Sprintf("%s|key:%s,val:%s,ver:%d,height:%d", prefix, encoder(node.GetNodeKey(), depth, true), string(node.GetValue()), node.GetVersion(), node.height)
 		return []string{here}, nil
 	}
 
 	// recurse on inner node
-	here := fmt.Sprintf("%s%s", prefix, encoder(node.GetHash(), depth, false))
+	here := fmt.Sprintf("%s%s|ver:%d|h:%d", prefix, encoder(node.GetNodeKey(), depth, false), node.version, node.height)
 
 	rightNode, err := node.getRightNode(t)
+
 	if err != nil {
 		return nil, err
 	}
@@ -331,4 +332,10 @@ func (t *ImmutableTree) nodeSize() int {
 		return false
 	})
 	return size
+}
+
+// TraverseStateChanges iterate the range of versions, compare each version to it's predecessor to extract the state changes of it.
+// endVersion is exclusive.
+func (t *ImmutableTree) TraverseStateChanges(startVersion, endVersion int64, fn func(version int64, changeSet *ChangeSet) error) error {
+	return t.ndb.traverseStateChanges(startVersion, endVersion, fn)
 }
