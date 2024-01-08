@@ -679,7 +679,7 @@ func (node *Node) traverse(t *ImmutableTree, ascending bool, cb func(*Node) bool
 // traversePost is a wrapper over traverseInRange when we want the whole tree post-order
 func (node *Node) traversePost(t *ImmutableTree, ascending bool, cb func(*Node) bool) bool {
 	return node.traverseInRangeForExport(t, nil, nil, ascending, false, true, func(node *Node) bool {
-		return true
+		return false
 	})
 }
 
