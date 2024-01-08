@@ -4,18 +4,15 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
+	"github.com/cosmos/iavl/cache"
+	"github.com/cosmos/iavl/internal/logger"
+	"github.com/pkg/errors"
+	dbm "github.com/tendermint/tm-db"
 	"math"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
-
-	"github.com/cosmos/cosmos-sdk/telemetry"
-	"github.com/cosmos/iavl/cache"
-	"github.com/cosmos/iavl/internal/logger"
-	"github.com/pkg/errors"
-	dbm "github.com/tendermint/tm-db"
 )
 
 const (
@@ -125,9 +122,7 @@ func (ndb *nodeDB) GetNode(hash []byte) (*Node, error) {
 	ndb.opts.Stat.IncCacheMissCnt()
 
 	// Doesn't exist, load.
-	timeStart := time.Now()
 	buf, err := ndb.db.Get(ndb.nodeKey(hash))
-	telemetry.MeasureSince(timeStart, "iavl", "nodedb", "get")
 	if err != nil {
 		return nil, fmt.Errorf("can't get node %X: %v", hash, err)
 	}
