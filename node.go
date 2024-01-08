@@ -7,9 +7,11 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	"io"
 	"math"
 	"sync"
+	"time"
 
 	"github.com/cosmos/iavl/cache"
 	"github.com/pkg/errors"
@@ -676,7 +678,7 @@ func (node *Node) traverse(t *ImmutableTree, ascending bool, cb func(*Node) bool
 
 // traversePost is a wrapper over traverseInRange when we want the whole tree post-order
 func (node *Node) traversePost(t *ImmutableTree, ascending bool, cb func(*Node) bool) bool {
-	return node.traverseInRange(t, nil, nil, ascending, false, true, func(node *Node) bool {
+	return node.traverseInRangeForExport(t, nil, nil, ascending, false, true, func(node *Node) bool {
 		return cb(node)
 	})
 }
@@ -685,11 +687,29 @@ func (node *Node) traverseInRange(tree *ImmutableTree, start, end []byte, ascend
 	stop := false
 	t := node.newTraversal(tree, start, end, ascending, inclusive, post, false)
 	// TODO: figure out how to handle these errors
+
 	for node2, err := t.next(); node2 != nil && err == nil; node2, err = t.next() {
 		stop = cb(node2)
 		if stop {
 			return stop
 		}
+	}
+	return stop
+}
+
+func (node *Node) traverseInRangeForExport(tree *ImmutableTree, start, end []byte, ascending bool, inclusive bool, post bool, cb func(*Node) bool) bool {
+	stop := false
+	t := node.newTraversal(tree, start, end, ascending, inclusive, post, false)
+	// TODO: figure out how to handle these errors
+	node2, err := t.next()
+	for node2 != nil && err == nil {
+		stop = cb(node2)
+		if stop {
+			return stop
+		}
+		startTime := time.Now()
+		node2, err = t.next()
+		telemetry.MeasureSince(startTime, "iavl", "export", "get_node")
 	}
 	return stop
 }

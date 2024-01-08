@@ -6,9 +6,6 @@ package iavl
 import (
 	"bytes"
 	"errors"
-	"github.com/cosmos/cosmos-sdk/telemetry"
-	"time"
-
 	dbm "github.com/tendermint/tm-db"
 )
 
@@ -136,10 +133,7 @@ func (t *traversal) doNext() (*Node, error, bool) {
 		if t.ascending {
 			if beforeEnd {
 				// push the delayed traversal for the right nodes,
-				startTime := time.Now()
 				rightNode, err := node.getRightNode(t.tree)
-				telemetry.MeasureSince(startTime, "iavl", "nodedb", "get_right")
-
 				if err != nil {
 					return nil, err, true
 				}
@@ -147,9 +141,7 @@ func (t *traversal) doNext() (*Node, error, bool) {
 			}
 			if afterStart {
 				// push the delayed traversal for the left nodes,
-				startTime := time.Now()
 				leftNode, err := node.getLeftNode(t.tree)
-				telemetry.MeasureSince(startTime, "iavl", "nodedb", "get_left")
 				if err != nil {
 					return nil, err, true
 				}
@@ -160,9 +152,7 @@ func (t *traversal) doNext() (*Node, error, bool) {
 			// We traverse through the right subtree, then the left subtree.
 			if afterStart {
 				// push the delayed traversal for the left nodes,
-				startTime := time.Now()
 				leftNode, err := node.getLeftNode(t.tree)
-				telemetry.MeasureSince(startTime, "iavl", "nodedb", "get_left")
 				if err != nil {
 					return nil, err, true
 				}
@@ -170,9 +160,7 @@ func (t *traversal) doNext() (*Node, error, bool) {
 			}
 			if beforeEnd {
 				// push the delayed traversal for the right nodes,
-				startTime := time.Now()
 				rightNode, err := node.getRightNode(t.tree)
-				telemetry.MeasureSince(startTime, "iavl", "nodedb", "get_right")
 				if err != nil {
 					return nil, err, true
 				}
