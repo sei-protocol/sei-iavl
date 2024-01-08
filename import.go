@@ -15,7 +15,7 @@ const defaultDesiredBatchSize = 20000
 
 // If there's an ongoing pending batch write, we will keep batching more writes
 // until the ongoing batch write completes or we reach maxBatchSize
-const defaultMaxBatchSize = 400000
+const defaultMaxBatchSize = 200000
 
 // ErrNoImport is returned when calling methods on a closed importer
 var ErrNoImport = errors.New("no import in progress")
