@@ -106,7 +106,7 @@ func MakeNode(buf []byte) (int64, int64, error) {
 		return 0, 0, errors.New("invalid height, must be int8")
 	}
 
-	size, n, cause := encoding.DecodeVarint(buf)
+	_, n, cause = encoding.DecodeVarint(buf)
 	if cause != nil {
 		return 0, 0, errors.Wrap(cause, "decoding node.size")
 	}
@@ -118,11 +118,12 @@ func MakeNode(buf []byte) (int64, int64, error) {
 	}
 	buf = buf[n:]
 
-	key, n, cause := encoding.DecodeBytes(buf)
+	_, n, cause = encoding.DecodeBytes(buf)
 	if cause != nil {
 		return 0, 0, errors.Wrap(cause, "decoding node.key")
 	}
 	buf = buf[n:]
+
 	//fmt.Printf("Node height %d, size %d, version %d, key length: %d \n", height, size, ver, len(key))
 
 	return height, ver, nil
