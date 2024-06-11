@@ -4,14 +4,15 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/cosmos/iavl/internal/encoding"
+	"github.com/pkg/errors"
+	"math"
 	"os"
-	"strconv"
 	"strings"
 
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/iavl"
-	ibytes "github.com/cosmos/iavl/internal/bytes"
 )
 
 // TODO: make this configurable?
@@ -21,6 +22,7 @@ const (
 
 func main() {
 	args := os.Args[1:]
+	dir := args[1]
 	if len(args) < 3 || (args[0] != "data" && args[0] != "keys" && args[0] != "shape" && args[0] != "versions" && args[0] != "size") {
 		fmt.Fprintln(os.Stderr, "Usage: iaviewer <data|keys|shape|versions|size> <leveldb dir> <prefix> [version number]")
 		fmt.Fprintln(os.Stderr, "<prefix> is the prefix of db, and the iavl tree of different modules in cosmos-sdk uses ")
@@ -28,39 +30,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	version := 0
-	if len(args) == 4 {
-		var err error
-		version, err = strconv.Atoi(args[3])
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Invalid version number: %s\n", err)
-			os.Exit(1)
-		}
-	}
-
-	tree, err := ReadTree(args[1], version, []byte(args[2]))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading data: %s\n", err)
-		os.Exit(1)
-	}
-	treeHash, err := tree.Hash()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error hashing tree: %s\n", err)
-		os.Exit(1)
-	}
-	fmt.Printf("Tree hash is %X, tree size is %d\n", treeHash, tree.ImmutableTree().Size())
-
 	switch args[0] {
 	case "data":
-		PrintTreeData(tree, false)
-	case "keys":
-		PrintTreeData(tree, true)
-	case "shape":
-		PrintShape(tree)
-	case "versions":
-		PrintVersions(tree)
-	case "size":
-		PrintSize(tree)
+		db, err := OpenDB(dir)
+		if err != nil {
+			panic(err)
+		}
+		PrintDBStats(db)
 	}
 }
 
@@ -89,25 +65,56 @@ func OpenDB(dir string) (dbm.DB, error) {
 // nolint: deadcode
 func PrintDBStats(db dbm.DB) {
 	count := 0
-	prefix := map[string]int{}
 	itr, err := db.Iterator(nil, nil)
 	if err != nil {
 		panic(err)
 	}
-
 	defer itr.Close()
 	for ; itr.Valid(); itr.Next() {
-		key := ibytes.UnsafeBytesToStr(itr.Key()[:1])
-		prefix[key]++
+		value := itr.Value()
+		err = MakeNode(value)
 		count++
+		if count%10000 == 0 {
+			fmt.Printf("Total scanned: %d\n", count)
+		}
 	}
 	if err := itr.Error(); err != nil {
 		panic(err)
 	}
 	fmt.Printf("DB contains %d entries\n", count)
-	for k, v := range prefix {
-		fmt.Printf("  %s: %d\n", k, v)
+}
+
+func MakeNode(buf []byte) error {
+	// Read node header (height, size, version, key).
+	height, n, cause := encoding.DecodeVarint(buf)
+	if cause != nil {
+		return errors.Wrap(cause, "decoding node.height")
 	}
+	buf = buf[n:]
+	if height < int64(math.MinInt8) || height > int64(math.MaxInt8) {
+		return errors.New("invalid height, must be int8")
+	}
+
+	size, n, cause := encoding.DecodeVarint(buf)
+	if cause != nil {
+		return errors.Wrap(cause, "decoding node.size")
+	}
+	buf = buf[n:]
+
+	ver, n, cause := encoding.DecodeVarint(buf)
+	if cause != nil {
+		return errors.Wrap(cause, "decoding node.version")
+	}
+	buf = buf[n:]
+
+	key, n, cause := encoding.DecodeBytes(buf)
+	if cause != nil {
+		return errors.Wrap(cause, "decoding node.key")
+	}
+	buf = buf[n:]
+	fmt.Printf("Node height %d, size %d, version %d, key length: %d \n", height, size, ver, len(key))
+
+	return nil
 }
 
 // ReadTree loads an iavl tree from the directory
