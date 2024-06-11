@@ -67,6 +67,8 @@ func OpenDB(dir string) (dbm.DB, error) {
 func PrintDBStats(db dbm.DB) {
 	count := 0
 	fmt.Println("Scanning database...")
+	totalStats := map[int64]int{}
+	leafNodeStats := map[int64]int{}
 	itr, err := db.Iterator(nil, nil)
 	if err != nil {
 		panic(err)
@@ -74,10 +76,17 @@ func PrintDBStats(db dbm.DB) {
 	defer itr.Close()
 	for ; itr.Valid(); itr.Next() {
 		value := itr.Value()
-		err = MakeNode(value)
+		height, version, err := MakeNode(value)
+		totalStats[version]++
+		if height == 0 {
+			leafNodeStats[version]++
+		}
+		if err != nil {
+			panic(err)
+		}
 		count++
 		if count%10000 == 0 {
-			fmt.Printf("Total scanned: %d\n", count)
+			fmt.Printf("Total scanned: %d, all nodes: %v, leaf nodes: %v\n", count, totalStats, leafNodeStats)
 		}
 	}
 	if err := itr.Error(); err != nil {
@@ -86,37 +95,37 @@ func PrintDBStats(db dbm.DB) {
 	fmt.Printf("DB contains %d entries\n", count)
 }
 
-func MakeNode(buf []byte) error {
+func MakeNode(buf []byte) (int64, int64, error) {
 	// Read node header (height, size, version, key).
 	height, n, cause := encoding.DecodeVarint(buf)
 	if cause != nil {
-		return errors.Wrap(cause, "decoding node.height")
+		return 0, 0, errors.Wrap(cause, "decoding node.height")
 	}
 	buf = buf[n:]
 	if height < int64(math.MinInt8) || height > int64(math.MaxInt8) {
-		return errors.New("invalid height, must be int8")
+		return 0, 0, errors.New("invalid height, must be int8")
 	}
 
 	size, n, cause := encoding.DecodeVarint(buf)
 	if cause != nil {
-		return errors.Wrap(cause, "decoding node.size")
+		return 0, 0, errors.Wrap(cause, "decoding node.size")
 	}
 	buf = buf[n:]
 
 	ver, n, cause := encoding.DecodeVarint(buf)
 	if cause != nil {
-		return errors.Wrap(cause, "decoding node.version")
+		return 0, 0, errors.Wrap(cause, "decoding node.version")
 	}
 	buf = buf[n:]
 
 	key, n, cause := encoding.DecodeBytes(buf)
 	if cause != nil {
-		return errors.Wrap(cause, "decoding node.key")
+		return 0, 0, errors.Wrap(cause, "decoding node.key")
 	}
 	buf = buf[n:]
 	fmt.Printf("Node height %d, size %d, version %d, key length: %d \n", height, size, ver, len(key))
 
-	return nil
+	return height, ver, nil
 }
 
 // ReadTree loads an iavl tree from the directory
