@@ -32,6 +32,7 @@ func main() {
 
 	switch args[0] {
 	case "data":
+		fmt.Println("Opening database...")
 		db, err := OpenDB(dir)
 		if err != nil {
 			panic(err)
@@ -65,6 +66,7 @@ func OpenDB(dir string) (dbm.DB, error) {
 // nolint: deadcode
 func PrintDBStats(db dbm.DB) {
 	count := 0
+	fmt.Println("Scanning database...")
 	itr, err := db.Iterator(nil, nil)
 	if err != nil {
 		panic(err)
