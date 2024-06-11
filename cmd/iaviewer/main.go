@@ -67,8 +67,7 @@ func OpenDB(dir string) (dbm.DB, error) {
 func PrintDBStats(db dbm.DB) {
 	count := 0
 	fmt.Println("Scanning database...")
-	totalStats := map[int64]int{}
-	leafNodeStats := map[int64]int{}
+	leafNodeCount := 0
 	itr, err := db.Iterator(nil, nil)
 	if err != nil {
 		panic(err)
@@ -76,17 +75,16 @@ func PrintDBStats(db dbm.DB) {
 	defer itr.Close()
 	for ; itr.Valid(); itr.Next() {
 		value := itr.Value()
-		height, version, err := MakeNode(value)
-		totalStats[version]++
+		height, _, err := MakeNode(value)
 		if height == 0 {
-			leafNodeStats[version]++
+			leafNodeCount++
 		}
 		if err != nil {
 			panic(err)
 		}
 		count++
 		if count%10000 == 0 {
-			fmt.Printf("Total scanned: %d, all nodes: %v, leaf nodes: %v\n", count, totalStats, leafNodeStats)
+			fmt.Printf("Total scanned: %d, leaf nodes: %d\n", count, leafNodeCount)
 		}
 	}
 	if err := itr.Error(); err != nil {
