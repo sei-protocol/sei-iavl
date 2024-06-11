@@ -123,7 +123,7 @@ func MakeNode(buf []byte) (int64, int64, error) {
 		return 0, 0, errors.Wrap(cause, "decoding node.key")
 	}
 	buf = buf[n:]
-	fmt.Printf("Node height %d, size %d, version %d, key length: %d \n", height, size, ver, len(key))
+	//fmt.Printf("Node height %d, size %d, version %d, key length: %d \n", height, size, ver, len(key))
 
 	return height, ver, nil
 }
