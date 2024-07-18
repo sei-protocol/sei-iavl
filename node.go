@@ -113,6 +113,56 @@ func MakeNode(buf []byte) (*Node, error) {
 	return node, nil
 }
 
+func MakeNodeRaw(buf []byte) (*Node, error) {
+
+	// Read node header (height, size, version, key).
+	height, n, cause := encoding.DecodeVarint(buf)
+	if cause != nil {
+		return nil, errors.Wrap(cause, "decoding node.height")
+	}
+	buf = buf[n:]
+	if height < int64(math.MinInt8) || height > int64(math.MaxInt8) {
+		return nil, errors.New("invalid height, must be int8")
+	}
+
+	size, n, cause := encoding.DecodeVarint(buf)
+	if cause != nil {
+		return nil, errors.Wrap(cause, "decoding node.size")
+	}
+	buf = buf[n:]
+
+	ver, n, cause := encoding.DecodeVarint(buf)
+	if cause != nil {
+		return nil, errors.Wrap(cause, "decoding node.version")
+	}
+	buf = buf[n:]
+
+	key, n, cause := encoding.DecodeBytes(buf)
+	if cause != nil {
+		return nil, errors.Wrap(cause, "decoding node.key")
+	}
+	buf = buf[n:]
+
+	node := &Node{
+		height:  int8(height),
+		size:    size,
+		version: ver,
+		key:     key,
+	}
+
+	// Read node body.
+
+	if node.isLeaf() {
+		val, _, cause := encoding.DecodeBytes(buf)
+		if cause != nil {
+			return nil, errors.Wrap(cause, "decoding node.value")
+		}
+		node.value = val
+	}
+
+	return node, nil
+}
+
 // to conform with interface name
 func (n *Node) GetCacheKey() []byte {
 	n.mtx.RLock()
