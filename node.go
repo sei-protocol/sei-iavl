@@ -14,6 +14,7 @@ import (
 	"github.com/cosmos/iavl/cache"
 	"github.com/pkg/errors"
 
+	ibytes "github.com/cosmos/iavl/internal/bytes"
 	"github.com/cosmos/iavl/internal/encoding"
 )
 
@@ -161,6 +162,10 @@ func MakeNodeRaw(buf []byte) (*Node, error) {
 	}
 
 	return node, nil
+}
+
+func GetPrefix(key []byte) string {
+	return ibytes.UnsafeBytesToStr(key[:1])
 }
 
 // to conform with interface name
