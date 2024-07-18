@@ -14,7 +14,6 @@ import (
 	"github.com/cosmos/iavl/cache"
 	"github.com/pkg/errors"
 
-	ibytes "github.com/cosmos/iavl/internal/bytes"
 	"github.com/cosmos/iavl/internal/encoding"
 )
 
@@ -140,6 +139,7 @@ func MakeNodeRaw(buf []byte) (*Node, error) {
 
 	key, n, cause := encoding.DecodeBytes(buf)
 	if cause != nil {
+		fmt.Printf("Error decoding node.key buf %+v\n", string(buf))
 		return nil, errors.Wrap(cause, "decoding node.key")
 	}
 	buf = buf[n:]
@@ -162,10 +162,6 @@ func MakeNodeRaw(buf []byte) (*Node, error) {
 	}
 
 	return node, nil
-}
-
-func GetPrefix(key []byte) string {
-	return ibytes.UnsafeBytesToStr(key[:1])
 }
 
 // to conform with interface name
