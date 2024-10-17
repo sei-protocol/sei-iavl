@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/cosmos/iavl/cache"
 	ibytes "github.com/cosmos/iavl/internal/bytes"
@@ -946,10 +947,12 @@ func (ndb *nodeDB) getFastIterator(start, end []byte, ascending bool) (dbm.Itera
 
 // Write to disk.
 func (ndb *nodeDB) Commit() error {
+	startTime := time.Now()
 	ndb.mtx.Lock()
 	defer ndb.mtx.Unlock()
 
 	var err error
+
 	if ndb.opts.Sync {
 		err = ndb.batch.WriteSync()
 	} else {
@@ -962,6 +965,10 @@ func (ndb *nodeDB) Commit() error {
 	ndb.batch.Close()
 	ndb.batch = ndb.db.NewBatch()
 
+	latency := time.Since(startTime)
+	if latency.Seconds() > 1 {
+		fmt.Printf("[IAVL-DEBUG] IAVL ndb commit took %s with sync=%v for version %d\n", latency, ndb.opts.Sync, ndb.latestVersion)
+	}
 	return nil
 }
 

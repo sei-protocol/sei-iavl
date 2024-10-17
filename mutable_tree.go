@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	dbm "github.com/tendermint/tm-db"
@@ -993,8 +994,13 @@ func (tree *MutableTree) SaveVersion() ([]byte, int64, error) {
 	tree.Mtx.Lock()
 	defer tree.Mtx.Unlock()
 
+	startTime := time.Now()
 	if v, err := tree.commitVersion(version, false); err != nil {
 		return nil, v, err
+	}
+	latency := time.Since(startTime)
+	if latency.Seconds() > 1 {
+		fmt.Printf("[IAVL-DEBUG] Tree.CommitVersion took %s for version %d\n", latency, version)
 	}
 
 	// Mtx is already held at this point
