@@ -6,6 +6,7 @@ package iavl
 import (
 	"bytes"
 	"errors"
+	"fmt"
 
 	dbm "github.com/tendermint/tm-db"
 )
@@ -258,6 +259,9 @@ func (iter *Iterator) Next() {
 	node, err := iter.t.next()
 	// TODO: double-check if this error is correctly handled.
 	if node == nil || err != nil {
+		if err != nil {
+			fmt.Printf("iterator closed due to %s\n", err)
+		}
 		iter.t = nil
 		iter.valid = false
 		return
