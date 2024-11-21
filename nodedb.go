@@ -73,6 +73,7 @@ type nodeDB struct {
 	mtx            sync.Mutex       // Read/write lock.
 	db             dbm.DB           // Persistent node storage.
 	batch          dbm.Batch        // Batched writing buffer.
+	deletionBatch  dbm.Batch        // Batched deletion buffer.
 	opts           Options          // Options to customize for pruning/writing
 	versionReaders map[int64]uint32 // Number of active version readers
 	storageVersion string           // Storage version
@@ -97,6 +98,7 @@ func newNodeDB(db dbm.DB, cacheSize int, opts *Options) *nodeDB {
 	return &nodeDB{
 		db:             db,
 		batch:          db.NewBatch(),
+		deletionBatch:  db.NewBatch(),
 		opts:           *opts,
 		firstVersion:   0,
 		latestVersion:  0, // initially invalid
@@ -511,6 +513,73 @@ func (ndb *nodeDB) DeleteVersionsFrom(version int64) error {
 		return err
 	}
 
+	return nil
+}
+
+func (ndb *nodeDB) DeleteVersionsRangeAsync(fromVersion, toVersion int64) error {
+	ndb.mtx.Lock()
+	latest, err := ndb.getLatestVersion()
+	ndb.mtx.Unlock()
+	if err != nil {
+		return err
+	}
+	if latest < toVersion {
+		return errors.Errorf("cannot delete latest saved version (%d)", latest)
+	}
+
+	ndb.mtx.Lock()
+	predecessor, err := ndb.getPreviousVersion(fromVersion)
+	ndb.mtx.Unlock()
+	if err != nil {
+		return err
+	}
+
+	ndb.mtx.Lock()
+	for v, r := range ndb.versionReaders {
+		if v < toVersion && v > predecessor && r != 0 {
+			ndb.mtx.Unlock()
+			return errors.Errorf("unable to delete version %v with %v active readers", v, r)
+		}
+	}
+	ndb.mtx.Unlock()
+
+	for version := fromVersion; version < toVersion; version++ {
+		err := ndb.traverseOrphansVersion(version, func(key, hash []byte) error {
+			var from, to int64
+			orphanKeyFormat.Scan(key, &to, &from)
+			if err := ndb.deletionBatch.Delete(key); err != nil {
+				return err
+			}
+			if from > predecessor {
+				if err := ndb.deletionBatch.Delete(ndb.nodeKey(hash)); err != nil {
+					return err
+				}
+				ndb.mtx.Lock()
+				ndb.nodeCache.Remove(hash)
+				ndb.mtx.Unlock()
+			} else {
+				key := ndb.orphanKey(from, predecessor, hash)
+				if err := ndb.deletionBatch.Set(key, hash); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	err = ndb.traverseRange(rootKeyFormat.Key(fromVersion), rootKeyFormat.Key(toVersion), func(k, v []byte) error {
+		if err := ndb.deletionBatch.Delete(k); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -961,6 +1030,24 @@ func (ndb *nodeDB) Commit() error {
 
 	ndb.batch.Close()
 	ndb.batch = ndb.db.NewBatch()
+
+	return nil
+}
+
+// Write deletion to disk.
+func (ndb *nodeDB) CommitDeletion() error {
+	var err error
+	if ndb.opts.Sync {
+		err = ndb.deletionBatch.WriteSync()
+	} else {
+		err = ndb.deletionBatch.Write()
+	}
+	if err != nil {
+		return errors.Wrap(err, "failed to write batch")
+	}
+
+	ndb.deletionBatch.Close()
+	ndb.deletionBatch = ndb.db.NewBatch()
 
 	return nil
 }
